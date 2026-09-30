@@ -16,3 +16,5 @@ Keep CLI, MCP, and workspace behavior behind one shared command layer. Things 3 
 - Do not copy upstream RemCTL source without reviewing its license and retaining required attribution.
 
 The retained 51-test suite, native build, and authorized disposable fixture flow pass. The plugin is installed with a granted Things connection, and its MCP tools are available in the host. The actual MCP App side panel rendered and was inspected with live Today data at the user’s request. Global sidebar launching and conversation attachments remain unverified; consult `docs/PLAN.md` for current evidence. Keep the original demo clearly separate from the connected workspace.
+
+The v0.1.3 Apple silicon DMG is published with Developer ID signing and Apple's accepted notarization tickets. Signature, ticket, Gatekeeper, deployed-copy, mounted-DMG, and anonymous-download checksum checks pass. The native installer has not yet been exercised on the MacBook. Keep local source builds ad-hoc by default, and never label a distribution notarized without its actual acceptance and validation evidence.
