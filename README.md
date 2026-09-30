@@ -1,42 +1,36 @@
 # ThingsCTL
 
-A macOS CLI, local MCP plugin, and Things 3 inspired app for ChatGPT and Codex. Inspired by [RemCTL](https://github.com/viticci/remctl), with the same command service behind terminal, chat, and workspace actions. Independent project; not affiliated with Cultured Code.
+A Things 3 command-line tool and interactive ChatGPT/Codex plugin for macOS. Inspired by [RemCTL](https://github.com/viticci/remctl), with one shared command service behind terminal commands, chat tools, and a Things-style workspace.
 
-Things is the task store. The v0.1 implementation uses its documented AppleScript interface through a small native automation bridge. It does not access the Things database or require Things Cloud credentials.
+Things remains your task store. ThingsCTL uses documented local AppleScript automation, with no Things database access or Things Cloud credentials. This is an independent project, not affiliated with Cultured Code.
 
-## Status
+![ThingsCTL workspace with fictional demo tasks](docs/images/workspace-demo.png)
 
-The CLI, shared command service, native Swift bridge, local MCP plugin, installer, and bundled Things-style workspace are implemented. The authorized disposable fixture flow passes against Things 3.24: Unicode editing, scheduling, Deadline set/clear, parent moves, completion, cancellation, reopening, conflict rejection, MCP reads, and Trash verification. The fixture project and task were moved to Trash afterward.
+*The screenshot shows explicitly labeled fictional demo data. The installed app connects to your local Things library.*
 
-The retained Python suite has 51 tests: 27 for the core/host/CLI, 13 for MCP, and 11 for installation. Redundant happy-path and literal-value assertions have been removed. UI verification uses synthetic fixtures. Installation, host tool discovery, and the live Things-style workspace in the conversation side panel are verified. Selected-task conversation attachments and the global sidebar launch remain unverified in the native host. The development bridge is ad-hoc signed and not notarized.
+## Install on a Mac
 
-Synthetic results are clearly marked as demo data. A failed live connection never falls back to fictional tasks.
+Download the **macOS arm64 ZIP** from the [latest release](https://github.com/kianhub/thingsctl/releases), extract it, and double-click **Install ThingsCTL.command**. The prebuilt archive supports Apple silicon and does not require Swift build tools.
 
-## Install
+You need macOS 14+, Things 3, Python 3.9+, and a recent Codex CLI. The installer installs the ThingsCTL Bridge, CLI, and local plugin. When macOS asks, allow **ThingsCTL Bridge** to control Things. The development bridge is ad-hoc signed and not notarized.
 
-With Things 3, Python 3.9+, Xcode Command Line Tools, and a recent Codex CLI installed:
+For a source install, including Intel Macs with Xcode Command Line Tools:
 
 ```sh
+mkdir -p ~/Developer
+cd ~/Developer
+git clone https://github.com/kianhub/thingsctl.git
+cd thingsctl
 ./install.sh
 ```
 
-For the prebuilt macOS arm64 archive from [v0.1.0](https://github.com/kianhub/thingsctl/releases/tag/v0.1.0), use `./install.sh --skip-build`. It includes the bridge and needs no Swift build tools.
+The bundled workspace needs no Node.js installation. See [installation and recovery](docs/INSTALLATION.md) for prerequisites, the terminal flow, and uninstalling.
 
-The installer builds the bridge, installs the `thingsctl` launcher, stages the local plugin, and registers it through supported Codex CLI commands. The bundled HTML removes the need for Node.js on an end-user installation. Allow **ThingsCTL Bridge** to control Things when macOS asks for Automation access. See [installation, permissions, packaging, and recovery](docs/INSTALLATION.md).
+Select ThingsCTL in ChatGPT or Codex and ask **“Open my Things workspace.”** The plugin also registers **ThingsCTL** in global navigation and **ThingsCTL workspace** in conversation panels. Installing on another Mac connects to Things on that Mac; it does not relay tasks through the first Mac.
 
-Open the plugin's **ThingsCTL** entry in the ChatGPT sidebar, or **ThingsCTL workspace** in the conversation side panel. You can also ask the ThingsCTL plugin to **Open my Things workspace**. The workspace includes native list navigation, areas and projects, Quick Entry, inline editing, When and Deadline controls, selected-task conversation attachments, and connection settings. The plugin is installed and enabled on the development Mac. The side-panel app was opened and inspected with live Today data. Global sidebar launching and task attachments still need host verification.
+## Workspace and commands
 
-## Private plugin
-
-[Open ThingsCTL’s private plugin page](https://chatgpt.com/plugins/plugins_6abd76427a6481919ed19fc5bac9a5eb). The v0.1.1 package is saved to the personal account and the same version is installed locally. The account page distributes the package; ThingsCTL Bridge continues to run on the Mac with Things installed.
-
-The installed app provides **ThingsCTL** in global navigation and **ThingsCTL workspace** beside a conversation, using the same local plugin pattern as RemCTL. The live conversation-panel app was inspected on September 30, 2026; native global-sidebar clicking and selected-task context remain unverified. A plugin mention makes the tools available; ask to open the workspace to display the app.
-
-See [plugin identity and update procedure](docs/PLUGIN.md) for the account and installed-source details.
-
-## Commands
-
-These commands are implemented. `TASK_ID` and `PROJECT_ID` refer to IDs returned by ThingsCTL; the examples operate on the connected local Things app.
+The workspace includes Inbox, Today, Upcoming, Anytime, Someday, Logbook, Trash, areas and projects, Quick Entry, inline task editing, tags, separate When and Deadline controls, and connection settings. The same tools are available in chat and the CLI.
 
 ```sh
 thingsctl doctor --json
@@ -46,32 +40,33 @@ thingsctl get TASK_ID --json
 thingsctl add "Review launch brief" --when today --project PROJECT_ID --json
 thingsctl update TASK_ID --deadline 2026-10-09 --json
 thingsctl complete TASK_ID --json
-thingsctl show TASK_ID
 thingsctl mcp serve
 ```
 
-`list` supports Inbox, Today, Upcoming, Anytime, Someday, Logbook, Trash, and project or area views. `search` reports bounded results and completeness. Other commands include cancel, reopen, move, trash, and creation of projects, areas, and tags. Use `thingsctl --help` and the relevant subcommand's `--help` for options.
+Replace `TASK_ID` and `PROJECT_ID` with IDs returned by ThingsCTL. Other commands include cancel, reopen, move, trash, and creating projects, areas, and tags. Use `thingsctl --help` for the full command list.
 
-Writes carry operation IDs, compare revisions when supplied, and use read-back verification. Results distinguish verified, failed, and uncertain operations. An uncertain operation is not automatically repeated; retain its ID while checking the current task.
+Changes use operation IDs, optional revision checks, and read-back verification. Results distinguish verified, failed, and uncertain writes. An uncertain write is not automatically repeated. Queries are bounded and report pagination and completeness.
 
-## Scope
+## Current scope
 
-The implemented AppleScript adapter covers titles, notes, directly applied tags, status, project/area membership, start dates, and deadlines. When and Deadline remain separate fields. The fixture flow verifies task text, status, project moves, scheduling, and Deadline changes; direct tag edits and area/tag creation are implemented but have not had a live round trip.
+Core task reads, titles, notes, status, dates, deadlines, tags, and parent moves are implemented. When and Deadline are separate. The live disposable integration flow verifies text, scheduling, Deadline set/clear, project moves, status changes, conflicts, and Trash. Direct tag edits and area/tag creation still need live verification.
 
-AppleScript omits active-project children from its Someday collection. Missing start kinds stay unknown; Anytime/Someday changes for tasks inside projects are rejected before writing. Today and date scheduling remain available. Set project-task Anytime/Someday in Things until a documented richer adapter is added. Built-in collections preserve the public automation interface’s membership; they are not promised to flatten every nested task.
+Project-task Anytime/Someday changes are unavailable because public readback cannot reliably confirm them. Missing start kinds remain unknown; Today and explicit dates are supported. Built-in collections follow Things’ public automation membership and may omit nested tasks.
 
-List pages and default search scans consume at most 20 source rows, skipping project containers. Source cursors advance even when a page returns no tasks. Native total task count remains unknown until a complete bounded traversal. Search reports incomplete results when the scan bound is reached; higher scans are explicit. Automatic workspace refresh waits 120 seconds and avoids overlapping loads.
+Headings, checklists, Evening, timed reminders, recurrence authoring, arbitrary reordering, and richer Shortcuts metadata are not connected features. See [capabilities and limits](docs/CAPABILITIES.md).
 
-Headings, checklists, Evening, timed reminders, recurrence authoring, arbitrary reordering, richer Shortcuts metadata, and a Shortcuts helper are unavailable. No URL Scheme mutation adapter or URL auth-token setup is included in v0.1. The plugin provides selected task context, rather than a Reminders-style attachment gallery.
+The retained Python suite has 51 tests, and the existing synthetic UI workflow checks field preservation, conflicts, uncertain writes, and light/dark layouts. The live conversation-panel app was inspected with Things 3.24. Native global-sidebar launching and selected-task context remain unverified. Demo mode is explicit; failed live connections never substitute fictional tasks.
 
-## Project documents
+## Development and distribution
 
-- [GitHub repository](https://github.com/kianhub/thingsctl)
-- [Private plan Page with the original interactive preview](https://chatgpt.com/space/page_392304e138e88191a4cf95560319d65b)
-- [Implementation and validation plan](docs/PLAN.md)
-- [Integration capabilities](docs/CAPABILITIES.md)
+The source and MIT license are public. The repository marketplace and downloadable release packages distribute the local plugin; no public plugin-directory submission is required. See [plugin distribution](docs/PLUGIN.md).
+
+Production UI source is in `ui/src/`, and its self-contained build is `ui/dist/things-workspace.html`. End-user installs use the checked-in bundle. Full licenses for bundled dependencies are in `ui/THIRD-PARTY-NOTICES.txt`.
+
+- [Implementation plan](docs/PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Visual direction](docs/DESIGN.md)
-- [Original workspace concept](ui/things-workspace-concept.html), using fictional data
+- [Testing](docs/TESTING.md)
+- [Original concept](ui/things-workspace-concept.html), using fictional data
 
-The repository lives at `/Users/kian/Developer/thingsctl`. Production workspace source is in `ui/src/`; its self-contained build is `ui/dist/things-workspace.html`. Full licenses for bundled dependencies are in `ui/THIRD-PARTY-NOTICES.txt`.
+Report bugs and suggest improvements through [GitHub issues](https://github.com/kianhub/thingsctl/issues).

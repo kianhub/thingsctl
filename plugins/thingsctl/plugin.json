@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "thingsctl",
-  "version": "0.1.1+e7388e2593a9",
+  "version": "0.1.2+c96f35054096",
   "description": "Things 3 in ChatGPT and Codex, with a local task workspace and verified commands.",
   "author": {
     "name": "Kian"

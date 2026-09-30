@@ -4,9 +4,7 @@ ThingsCTL implements three surfaces for one Things command service: a CLI, a loc
 
 ## Deliverables
 
-- Local repository: `/Users/kian/Developer/thingsctl`.
-- Private [GitHub repository](https://github.com/kianhub/thingsctl).
-- [Private plan Page with the original interactive preview](https://chatgpt.com/space/page_392304e138e88191a4cf95560319d65b).
+- Public [GitHub repository](https://github.com/kianhub/thingsctl), with an MIT license.
 - Python command core and CLI, bounded reads/search, operation receipts, revision checks, and mutation verification.
 - Swift automation bridge and compiled AppleScript adapter using the public Things interface.
 - Stdio MCP server, global and thread workspace entrypoints, structured settings, and portable local plugin manifests.

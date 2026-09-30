@@ -11,19 +11,41 @@ ThingsCTL is a local macOS tool and ChatGPT/Codex plugin. Things 3 remains your 
 
 The repository is a development build. It is ad-hoc signed with the stable identifier `com.kianhub.thingsctl.bridge`; it is not notarized. macOS may require renewing the Automation grant after a rebuild.
 
-## Install
+## Install on your MacBook
 
-From the repository:
+Install Things 3 and a recent ChatGPT/Codex desktop app with plugin support on the MacBook. ThingsCTL uses the Things app on that Mac; signing in to the same Things Cloud account lets Things sync your tasks between Macs.
+
+For an Apple silicon Mac, download the [v0.1.2 macOS arm64 archive](https://github.com/kianhub/thingsctl/releases/download/v0.1.2/thingsctl-v0.1.2-macos-arm64.zip) and extract it. In Terminal, change to the extracted `thingsctl` folder, then run:
 
 ```sh
+./install.sh --skip-build
+```
+
+This installs the prebuilt bridge and the local plugin. Python 3.9+ and the Codex CLI are still required; Xcode and Node.js are not required for this archive. The archive also includes **Install ThingsCTL.command**, which you can double-click instead of typing the install command.
+
+To build from the public source repository instead, including on an Intel Mac:
+
+```sh
+mkdir -p ~/Developer
+cd ~/Developer
+git clone https://github.com/kianhub/thingsctl.git
+cd thingsctl
 ./install.sh
 ```
+
+The source build requires Xcode Command Line Tools (`xcode-select --install`). Allow **ThingsCTL Bridge** to control Things when macOS asks, then follow the connection check below.
 
 The installer builds the native bridge, uses the checked-in bundled workspace, stages a self-contained plugin, installs `~/Applications/ThingsCTL Bridge.app` and `~/.local/bin/thingsctl`, and registers the plugin with supported Codex CLI commands. It preserves an unrelated launcher as a backup and records ownership in `~/Library/Application Support/ThingsCTL/install-manifest.json`. Its LaunchAgent starts the bridge at login. Reinstalls retain a recovery copy of the previous managed files until setup completes. It does not change Things data or macOS permission settings.
 
 If `~/.local/bin` is absent from your shell PATH, use the full executable path or add that directory in your own shell configuration. The installer leaves shell startup files untouched.
 
-The [v0.1.0 macOS arm64 archive](https://github.com/kianhub/thingsctl/releases/tag/v0.1.0) includes a prebuilt bridge in `dist/`. Extract it and run `./install.sh --skip-build`; Python and Codex are still required. The portable plugin ZIP contains only the plugin runtime/UI, and requires a separately installed bridge.
+The portable plugin ZIP contains only the plugin runtime/UI and requires a separately installed bridge. If you already installed the same plugin through a private account page, install just its local bridge and CLI from the extracted macOS archive:
+
+```sh
+./install.sh --skip-build --skip-plugin
+```
+
+Use the normal `./install.sh --skip-build` command for the GitHub distribution. `--skip-plugin` is only needed when another installation already supplies the plugin.
 
 Useful installation options:
 
@@ -59,7 +81,7 @@ For another MCP client, use this installed command:
 
 The checked-in `plugins/thingsctl/` source is self-contained: portable Agent Plugins 1.0 manifests, a Codex compatibility overlay, Python runtime, workspace, and licenses. The repository marketplace points to this directory, so direct marketplace installation can launch without a global CLI. The native bridge still needs `./install.sh` on the same Mac.
 
-After changing runtime or UI source, refresh the marketplace source and build a private package:
+After changing runtime or UI source, refresh the marketplace source and build a portable package:
 
 ```sh
 python3 scripts/package_plugin.py --sync-source
@@ -68,11 +90,11 @@ python3 scripts/package_plugin.py --output work/plugin/thingsctl --zip work/thin
 
 The package contains its Python command runtime and bundled HTML. Its MCP launcher uses `${PLUGIN_ROOT}` and runs without dependencies on the repository or global `thingsctl` path. Packaging replaces generated files from canonical sources and uses a deterministic content version, so unchanged rebuilds retain the same version. Python 3.9+ and the separately installed native bridge are still required; a local plugin cannot run in web or mobile ChatGPT. Do not install by editing a Codex version cache.
 
-## Private distribution
+## GitHub distribution
 
-The installed local marketplace provides the sidebar app in the desktop host, using the same local distribution pattern as RemCTL. Public directory submission is not required. A completed plugin ZIP can also be saved privately to a personal account through Plugin Creator; this gives it an account plugin page and preserves its local runtime configuration. See the repository README for the private plugin link when available.
+The public [GitHub repository](https://github.com/kianhub/thingsctl) and its [release downloads](https://github.com/kianhub/thingsctl/releases) distribute the source, plugin package, and prebuilt Mac archive. The installer registers the local marketplace and its sidebar app in the desktop host, using the same local distribution pattern as RemCTL. Public plugin-directory submission is not required.
 
-Saving a package to the account does not host the automation bridge. The plugin still requires ThingsCTL Bridge and Things on the same Mac. Keep the working local installation while saving the account copy; verify an account-installed copy before replacing it.
+Installing the plugin alone does not install or host its automation bridge. ThingsCTL Bridge and Things must run on the same Mac as the plugin. Use the installer on each Mac where you want the app available.
 
 ## Demo and supported scope
 
