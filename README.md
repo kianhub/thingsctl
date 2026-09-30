@@ -10,6 +10,7 @@ Planning repository. The CLI, MCP server, native bridge, and Codex plugin are **
 
 ## Project documents
 
+- [Plan Page with interactive Things-style preview](https://chatgpt.com/space/page_392304e138e88191a4cf95560319d65b) — private to the Page owner.
 - [Implementation plan](docs/PLAN.md)
 - [Integration capabilities](docs/CAPABILITIES.md)
 - [Architecture](docs/ARCHITECTURE.md)

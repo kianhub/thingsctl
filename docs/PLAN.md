@@ -6,6 +6,7 @@ Build a Things 3 equivalent of RemCTL with a CLI, a local MCP integration for AI
 
 - Local Git repository: `/Users/kian/Developer/thingsctl`.
 - Private GitHub repository: [kianhub/thingsctl](https://github.com/kianhub/thingsctl).
+- [Private plan Page with interactive preview](https://chatgpt.com/space/page_392304e138e88191a4cf95560319d65b).
 - Research, architecture, capability matrix, visual specification, and interactive demo concept.
 - No production commands, service, or plugin are implemented yet.
 
