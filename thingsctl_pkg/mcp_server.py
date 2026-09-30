@@ -25,7 +25,7 @@ META_SERVER_INFO = "io.modelcontextprotocol/serverInfo"
 UI_EXTENSION = "io.modelcontextprotocol/ui"
 UI_URI = "ui://thingsctl/workspace.html"
 UI_MIME = "text/html;profile=mcp-app"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 MAX_MESSAGE_BYTES = 1024 * 1024
 NAVIGATION = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="3"/><path d="m6 10 2.7 2.7L14 7.3"/></svg>'
 ICON = {"src": "data:image/svg+xml;base64," + base64.b64encode(NAVIGATION.encode()).decode(), "mimeType": "image/svg+xml", "sizes": ["20x20"]}
@@ -38,7 +38,9 @@ INSTRUCTIONS = (
     "ThingsCTL permits Today and explicit start dates, or detaching the project before changing start kind. "
     "Reads are bounded: follow nextOffset while hasMore is true and respect completeness metadata. "
     "Mutations return verified, failed, or uncertain operations. Never automatically retry an uncertain "
-    "operation with a new operationId. The workspace opens as a fullscreen MCP App. "
+    "operation with a new operationId. Use thingsctl_workspace when the user asks to open or browse the ThingsCTL app, "
+    "including viewing Today with the plugin; a data-only list call does not display the app. "
+    "The workspace opens as a fullscreen MCP App. "
     "Use only authorized tasks and changes; attaching task context does not authorize a mutation. "
     "This version does not expose headings, checklists, Evening, reminders, or recurrence authoring."
 )
@@ -122,8 +124,8 @@ def error_envelope(code, message):
     return {"ok": False, "requestId": str(uuid.uuid4()), "error": {"code": code, "message": message}}
 
 
-def tool(name, title, schema, command=None, read=True, destructive=False, entrypoints=None, app_only=False):
-    descriptor = {"name": name, "title": title, "description": title + ". Uses ThingsCTL's shared command service.",
+def tool(name, title, schema, command=None, read=True, destructive=False, entrypoints=None, app_only=False, description=None):
+    descriptor = {"name": name, "title": title, "description": description or title + ". Uses ThingsCTL's shared command service.",
                   "inputSchema": schema, "annotations": {"readOnlyHint": read, "destructiveHint": destructive,
                   "idempotentHint": read, "openWorldHint": False}, "command": command}
     if entrypoints:
@@ -153,8 +155,11 @@ TOOLS = [
     tool("thingsctl_project_add", "Create a Things project", obj({"title": TASK_FIELDS["title"], "notes": TASK_FIELDS["notes"], "areaId": NULL_ID, **CREATE_META}, ["title"]), "project_add", False),
     tool("thingsctl_area_add", "Create a Things area", obj({"title": TASK_FIELDS["title"], **CREATE_META}, ["title"]), "area_add", False),
     tool("thingsctl_tag_add", "Create a Things tag", obj({"title": TASK_FIELDS["title"], **CREATE_META}, ["title"]), "tag_add", False),
-    tool("thingsctl_workspace", "Things", obj(), entrypoints=[{"type": "global"}]),
-    tool("thingsctl_workspace_thread", "Task workspace", obj(), entrypoints=[{"type": "thread"}], app_only=True),
+    tool("thingsctl_workspace", "ThingsCTL", obj(), entrypoints=[{"type": "global"}], description=
+         "Open the Things-style interactive app in the sidebar or beside this conversation, with live tasks and editing controls. "
+         "Call this when the user asks to browse or check Things in the app, UI, sidebar, or workspace. "
+         "Returns the initial task list for the app; data-only tools remain available for ordinary task queries."),
+    tool("thingsctl_workspace_thread", "ThingsCTL workspace", obj(), entrypoints=[{"type": "thread"}], app_only=True),
     tool("thingsctl_workspace_snapshot", "Refresh Things workspace", obj(QUERY_FIELDS), "list", app_only=True),
     tool("thingsctl_workspace_mutate", "Apply a Things workspace change", obj({"command": {"type": "string", "enum": list(MUTATION_COMMANDS)},
          "arguments": {"type": "object"}, "operationId": MUTATION_META["operationId"], "expectedRevision": ID}, ["command", "arguments", "operationId"]), read=False, destructive=True, app_only=True),
@@ -225,28 +230,25 @@ class MCPServer:
                 os.unlink(temporary)
         return {"values": updated}
 
-    def apps(self, caps):
-        types = caps.get("extensions", {}).get(UI_EXTENSION, {}).get("mimeTypes", []) if isinstance(caps, dict) else []
-        return any(isinstance(item, str) and item.split(";")[0].strip().lower() == "text/html" and
-                   "profile=mcp-app" in item.replace('"', '').replace(" ", '').lower() for item in types)
-
     def ui_meta(self):
         return {"ui": {"resourceUri": UI_URI, "visibility": ["model", "app"]}}
 
-    def descriptor(self, item, apps, legacy):
+    def descriptor(self, item, legacy):
         result = {key: copy.deepcopy(value) for key, value in item.items() if key not in {"command", "entrypoints", "appOnly"}}
         meta = {}
-        if apps or legacy:
-            if item["name"] in {"thingsctl_workspace", "thingsctl_workspace_thread", "thingsctl_settings"}:
-                meta = self.ui_meta()
-                if legacy:
-                    meta["openai/outputTemplate"] = UI_URI
-            elif item.get("appOnly"):
-                meta["ui"] = {"visibility": ["app"]}
-            if item.get("appOnly") and "ui" in meta:
-                meta["ui"]["visibility"] = ["app"]
-            if item.get("entrypoints"):
-                meta["openai/ui"] = {"entrypoints": item["entrypoints"]}
+        # Keep registration stable during host discovery, before UI capabilities
+        # may be advertised. Hosts choose rendering; every opener retains a text
+        # result, and app-only tools retain their visibility on every transport.
+        if item["name"] in {"thingsctl_workspace", "thingsctl_workspace_thread", "thingsctl_settings"}:
+            meta = self.ui_meta()
+            if legacy:
+                meta["openai/outputTemplate"] = UI_URI
+        elif item.get("appOnly"):
+            meta["ui"] = {"visibility": ["app"]}
+        if item.get("appOnly") and "ui" in meta:
+            meta["ui"]["visibility"] = ["app"]
+        if item.get("entrypoints"):
+            meta["openai/ui"] = {"entrypoints": item["entrypoints"]}
         if meta:
             result["_meta"] = meta
         return result
@@ -311,13 +313,12 @@ class MCPServer:
             return {"protocolVersion": self.legacy_version, "capabilities": self.capabilities(), "serverInfo": self.identity(), "instructions": INSTRUCTIONS}
         if method == "ping":
             return {}
-        apps = self.apps(caps)
         if method == "tools/list":
-            return {"tools": [self.descriptor(item, apps, not modern) for item in TOOLS]}
+            return {"tools": [self.descriptor(item, not modern) for item in TOOLS]}
         if method == "tools/call":
             arguments = params.get("arguments", {})
             result = self.call_tool(params.get("name"), arguments)
-            if params.get("name") in {"thingsctl_workspace", "thingsctl_workspace_thread", "thingsctl_settings"} and (apps or not modern):
+            if params.get("name") in {"thingsctl_workspace", "thingsctl_workspace_thread", "thingsctl_settings"}:
                 result["_meta"] = self.ui_meta()
                 if not modern:
                     result["_meta"]["openai/outputTemplate"] = UI_URI

@@ -1,6 +1,6 @@
 # ThingsCTL
 
-A macOS CLI, local MCP plugin, and Things 3 inspired workspace for Codex. Inspired by [RemCTL](https://github.com/viticci/remctl), with the same command service behind terminal, chat, and workspace actions. Independent project; not affiliated with Cultured Code.
+A macOS CLI, local MCP plugin, and Things 3 inspired app for ChatGPT and Codex. Inspired by [RemCTL](https://github.com/viticci/remctl), with the same command service behind terminal, chat, and workspace actions. Independent project; not affiliated with Cultured Code.
 
 Things is the task store. The v0.1 implementation uses its documented AppleScript interface through a small native automation bridge. It does not access the Things database or require Things Cloud credentials.
 
@@ -8,7 +8,7 @@ Things is the task store. The v0.1 implementation uses its documented AppleScrip
 
 The CLI, shared command service, native Swift bridge, local MCP plugin, installer, and bundled Things-style workspace are implemented. The authorized disposable fixture flow passes against Things 3.24: Unicode editing, scheduling, Deadline set/clear, parent moves, completion, cancellation, reopening, conflict rejection, MCP reads, and Trash verification. The fixture project and task were moved to Trash afterward.
 
-The retained Python suite has 51 tests: 27 for the core/host/CLI, 13 for MCP, and 11 for installation. Redundant happy-path and literal-value assertions have been removed. UI verification uses synthetic fixtures. Actual installation and host tool discovery are verified; native workspace rendering and conversation attachments remain unverified because Computer Use blocks ChatGPT’s native window. The development bridge is ad-hoc signed and not notarized.
+The retained Python suite has 51 tests: 27 for the core/host/CLI, 13 for MCP, and 11 for installation. Redundant happy-path and literal-value assertions have been removed. UI verification uses synthetic fixtures. Installation, host tool discovery, and the live Things-style workspace in the conversation side panel are verified. Selected-task conversation attachments and the global sidebar launch remain unverified in the native host. The development bridge is ad-hoc signed and not notarized.
 
 Synthetic results are clearly marked as demo data. A failed live connection never falls back to fictional tasks.
 
@@ -24,7 +24,15 @@ For the prebuilt macOS arm64 archive from [v0.1.0](https://github.com/kianhub/th
 
 The installer builds the bridge, installs the `thingsctl` launcher, stages the local plugin, and registers it through supported Codex CLI commands. The bundled HTML removes the need for Node.js on an end-user installation. Allow **ThingsCTL Bridge** to control Things when macOS asks for Automation access. See [installation, permissions, packaging, and recovery](docs/INSTALLATION.md).
 
-Open the plugin's **Things** entrypoint or **Task workspace** tab in Codex. The workspace includes native list navigation, areas and projects, Quick Entry, inline editing, When and Deadline controls, selected-task conversation attachments, and connection settings. The plugin is installed and enabled on the development Mac. Host rendering and attachment behavior remain unverified; browser fixture tests do not establish that integration.
+Open the plugin's **ThingsCTL** entry in the ChatGPT sidebar, or **ThingsCTL workspace** in the conversation side panel. You can also ask the ThingsCTL plugin to **Open my Things workspace**. The workspace includes native list navigation, areas and projects, Quick Entry, inline editing, When and Deadline controls, selected-task conversation attachments, and connection settings. The plugin is installed and enabled on the development Mac. The side-panel app was opened and inspected with live Today data. Global sidebar launching and task attachments still need host verification.
+
+## Private plugin
+
+[Open ThingsCTL’s private plugin page](https://chatgpt.com/plugins/plugins_6abd76427a6481919ed19fc5bac9a5eb). The v0.1.1 package is saved to the personal account and the same version is installed locally. The account page distributes the package; ThingsCTL Bridge continues to run on the Mac with Things installed.
+
+The installed app provides **ThingsCTL** in global navigation and **ThingsCTL workspace** beside a conversation, using the same local plugin pattern as RemCTL. The live conversation-panel app was inspected on September 30, 2026; native global-sidebar clicking and selected-task context remain unverified. A plugin mention makes the tools available; ask to open the workspace to display the app.
+
+See [plugin identity and update procedure](docs/PLUGIN.md) for the account and installed-source details.
 
 ## Commands
 

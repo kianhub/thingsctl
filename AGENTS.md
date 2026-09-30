@@ -15,4 +15,4 @@ Keep CLI, MCP, and workspace behavior behind one shared command layer. Things 3 
 - Label every simulated interface as demo data until it is connected.
 - Do not copy upstream RemCTL source without reviewing its license and retaining required attribution.
 
-The retained 51-test suite, native build, and authorized disposable fixture flow pass. The plugin is installed with a granted Things connection, and its MCP tools are available in the host. Native workspace rendering and conversation attachments remain unverified because Computer Use blocks the ChatGPT app; consult `docs/PLAN.md` for current evidence. Keep the original demo clearly separate from the connected workspace.
+The retained 51-test suite, native build, and authorized disposable fixture flow pass. The plugin is installed with a granted Things connection, and its MCP tools are available in the host. The actual MCP App side panel rendered and was inspected with live Today data at the user’s request. Global sidebar launching and conversation attachments remain unverified; consult `docs/PLAN.md` for current evidence. Keep the original demo clearly separate from the connected workspace.

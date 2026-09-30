@@ -61,9 +61,19 @@ class MCPTests(unittest.TestCase):
         result = self.request("tools/list", {"_meta": {META_VERSION: "2026-07-28"}})
         self.assertEqual(result["error"]["code"], -32602)
 
-    def test_modern_non_app_client_has_no_ui_entrypoints(self):
-        result = self.request("tools/list", {"_meta": {META_VERSION: "2026-07-28", META_CAPABILITIES: {}}})
-        self.assertTrue(all("_meta" not in tool for tool in result["result"]["tools"]))
+    def test_app_registration_survives_discovery_without_ui_mime_types(self):
+        for capabilities in ({}, {"extensions": {UI_EXTENSION: {}}}):
+            result = self.request("tools/list", {"_meta": {META_VERSION: "2026-07-28", META_CAPABILITIES: capabilities}})
+            tools = {tool["name"]: tool for tool in result["result"]["tools"]}
+            opener = tools["thingsctl_workspace"]["_meta"]
+            self.assertEqual(opener["ui"]["resourceUri"], UI_URI)
+            self.assertEqual(opener["openai/ui"]["entrypoints"], [{"type": "global"}])
+            panel = tools["thingsctl_workspace_thread"]["_meta"]
+            self.assertEqual(panel["openai/ui"]["entrypoints"], [{"type": "thread"}])
+            self.assertEqual(panel["ui"]["visibility"], ["app"])
+            self.assertEqual(tools["thingsctl_workspace_mutate"]["_meta"]["ui"]["visibility"], ["app"])
+            self.assertNotIn("_meta", tools["thingsctl_list"])
+        self.assertEqual(self.service.calls, [])
 
     def test_resource_reads_are_bounded_to_the_workspace(self):
         content = self.request("resources/read", {"uri": UI_URI}, modern=True)["result"]["contents"][0]
@@ -103,7 +113,8 @@ class MCPTests(unittest.TestCase):
         self.assertEqual(self.service.calls, [])
 
     def test_workspace_opener_returns_initial_snapshot_once(self):
-        result = self.request("tools/call", {"name": "thingsctl_workspace", "arguments": {}}, modern=True)["result"]
+        result = self.request("tools/call", {"name": "thingsctl_workspace", "arguments": {},
+                                             "_meta": {META_VERSION: "2026-07-28", META_CAPABILITIES: {}}})["result"]
         self.assertTrue(result["structuredContent"]["meta"]["demo"])
         self.assertEqual(len(self.service.calls), 1)
         self.assertEqual(self.service.calls[0][0], "list")

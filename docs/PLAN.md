@@ -1,6 +1,6 @@
 # ThingsCTL implementation and validation plan
 
-ThingsCTL implements three surfaces for one Things command service: a CLI, a local MCP plugin, and a Things-inspired Codex workspace. Things remains the task store. The v0.1 code is present; the native disposable fixture flow and installation pass. Host tools are available; native window rendering remains unverified.
+ThingsCTL implements three surfaces for one Things command service: a CLI, a local MCP plugin, and a Things-inspired Codex workspace. Things remains the task store. The v0.1 code is present; the native disposable fixture flow and installation pass. Host tools are available, and the live MCP App rendered in the conversation side panel. Global sidebar launching and selected-task attachments remain unverified.
 
 ## Deliverables
 
@@ -27,9 +27,9 @@ Headings, checklist editing, Evening, timed reminders, recurrence authoring, arb
 | Surface | Completed validation | Remaining gate |
 | --- | --- | --- |
 | Command core and CLI | 27 fixture tests covering validation, bounded reads, revisions, verification, and operation receipts | Native fixture flow passed; area/tag behavior remains unverified |
-| MCP server | 13 tests for tool/schema behavior, structured results, resources, and plugin metadata | Installed tools are discovered and the fixture get succeeds; native workspace rendering remains unverified |
+| MCP server | 13 tests for tool/schema behavior, structured results, resources, and plugin metadata | Installed tools are discovered and the fixture get succeeds; live workspace rendering in the side panel is verified; global sidebar launching remains unverified |
 | Installer | 11 tests covering ownership, staging, supported registration commands, and recovery behavior | Installed and enabled through supported Codex commands; granted Things connection |
-| Workspace | Type checks, self-contained build checks, browser interactions, conflicts/uncertainty, and light/dark layouts at 320–1024px | Full synthetic browser suite passed after final native semantics fixes; host rendering and task attachments remain unverified |
+| Workspace | Type checks, self-contained build checks, browser interactions, conflicts/uncertainty, and light/dark layouts at 320–1024px | Full synthetic browser suite passed; the real host side panel rendered live Today data. Global sidebar launching and task attachments remain unverified |
 | Native bridge | Swift build, AppleScript compilation, static validation | Granted connection and 20-check fixture flow passed; large-library/localization behavior remains unverified |
 
 No personal task data is used as test material. The authorized integration flow reused one exact fixture project and task while fixing native semantics, then moved both to Trash. UI browser checks use synthetic demo data.
@@ -38,8 +38,8 @@ No personal task data is used as test material. The authorized integration flow 
 
 1. Completed: native built-in-list resolution and granted bridge Automation connection.
 2. Completed: authorized disposable project/task flow for text, scheduling, Deadline set/clear, project moves, completion/cancellation/reopening, conflict rejection, MCP read, and Trash. Direct tag edits remain a separate integration check.
-3. Completed installation, enabled registration, host tool discovery, and live fixture reads. Actual native ChatGPT workspace placement and selected-task context remain unverified because Computer Use blocks that app.
-4. Repeat relevant checks after any fixes. Record unsupported or partially verified native behaviors instead of claiming complete parity.
+3. Completed installation, enabled registration, host tool discovery, and live fixture reads. The actual MCP App was opened in this conversation’s side panel and inspected with live Today data. The native ChatGPT global sidebar and selected-task context remain unverified; Computer Use of that native app is blocked, while the scoped MCP Apps surface is accessible.
+4. v0.1.1 preserves app entrypoint metadata before MIME negotiation, names the global/thread launchers clearly, adds a workspace-launch skill, and keeps a successful connection when fullscreen placement is declined. Repeat relevant checks after any fixes. Record unsupported or partially verified native behaviors instead of claiming complete parity.
 5. Distribute the canonical plugin ZIP and a macOS arm64 archive containing source, bundled UI/licenses, runtime, installer, and prebuilt bridge. The bridge is ad-hoc signed; notarized distribution remains future work.
 
 Large-library completeness, localized list behavior, manual order, inherited tags, native edits during a save, interrupted native writes, and repeating-item behavior need focused integration evidence. Cross-app writes are not atomic transactions.

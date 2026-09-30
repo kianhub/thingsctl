@@ -1,6 +1,6 @@
 # Install ThingsCTL
 
-ThingsCTL is a local macOS tool and Codex plugin. Things 3 remains your task store. The CLI, MCP tools, and workspace use the same command service and the ThingsCTL Bridge.
+ThingsCTL is a local macOS tool and ChatGPT/Codex plugin. Things 3 remains your task store. The CLI, MCP tools, and workspace use the same command service and the ThingsCTL Bridge.
 
 ## Requirements
 
@@ -45,7 +45,7 @@ Useful installation options:
 
 `doctor` checks installation and connection without reading task content. The list command reads your Today tasks. When the bridge first connects to Things, macOS may ask whether **ThingsCTL Bridge** may control Things. Allow that Automation request. ThingsCTL does not need Things Cloud credentials, database access, Full Disk Access, or Accessibility permission.
 
-In Codex, refresh plugin discovery if necessary and invoke **ThingsCTL** → **Open my Things workspace**. The global Things entrypoint and Task workspace tab expose the same interactive view. Preference settings are available through the host's structured settings controls. Selected tasks can be attached to the conversation through the workspace, without sending a message automatically.
+In ChatGPT or Codex, refresh plugin discovery if necessary and invoke **ThingsCTL** → **Open my Things workspace**. The global **ThingsCTL** sidebar entry and **ThingsCTL workspace** conversation-panel tab expose the same interactive app. Mentioning the plugin selects its tools; the workspace opener is what displays the app. Text-only list commands remain available. Preference settings are available through the host's structured settings controls. Selected tasks can be attached to the conversation through the workspace, without sending a message automatically.
 
 If a newly installed plugin's tools are absent in an existing chat, refresh the plugin or open a fresh chat and select ThingsCTL. No installation success message alone proves that tools or the app rendered.
 
@@ -67,6 +67,12 @@ python3 scripts/package_plugin.py --output work/plugin/thingsctl --zip work/thin
 ```
 
 The package contains its Python command runtime and bundled HTML. Its MCP launcher uses `${PLUGIN_ROOT}` and runs without dependencies on the repository or global `thingsctl` path. Packaging replaces generated files from canonical sources and uses a deterministic content version, so unchanged rebuilds retain the same version. Python 3.9+ and the separately installed native bridge are still required; a local plugin cannot run in web or mobile ChatGPT. Do not install by editing a Codex version cache.
+
+## Private distribution
+
+The installed local marketplace provides the sidebar app in the desktop host, using the same local distribution pattern as RemCTL. Public directory submission is not required. A completed plugin ZIP can also be saved privately to a personal account through Plugin Creator; this gives it an account plugin page and preserves its local runtime configuration. See the repository README for the private plugin link when available.
+
+Saving a package to the account does not host the automation bridge. The plugin still requires ThingsCTL Bridge and Things on the same Mac. Keep the working local installation while saving the account copy; verify an account-installed copy before replacing it.
 
 ## Demo and supported scope
 

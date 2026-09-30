@@ -3,7 +3,7 @@ import {OpenAIExtensions} from '@openai/mcp-extensions/app';
 import {Envelope,Task,ThingsError,envelope,snapshotData} from './types';
 import {demoCall} from './demo';
 export const demo=new URLSearchParams(location.search).get('demo')==='1';
-export const app=new App({name:'ThingsCTL',version:'0.1.0'},{},{autoResize:true});
+export const app=new App({name:'ThingsCTL',version:'0.1.1'},{},{autoResize:true});
 export const extensions=new OpenAIExtensions(app);
 type Event={type:'result';value:Envelope}|{type:'connection';connected:boolean;message?:string}|{type:'context';context:any};
 const listeners=new Set<(event:Event)=>void>();let latest:Event|undefined;let initialSnapshot=false;
@@ -17,7 +17,10 @@ export function connect(){
  if(ready)return ready;
  ready=demo?Promise.resolve().then(()=>emit({type:'connection',connected:true})):app.connect().then(async()=>{
   contextChanged(app.getHostContext());emit({type:'connection',connected:true});
-  const host=app.getHostContext();if(host?.displayMode==='inline'&&host?.availableDisplayModes?.includes('fullscreen'))await app.requestDisplayMode({mode:'fullscreen'});
+  const host=app.getHostContext();if(host?.displayMode==='inline'&&host?.availableDisplayModes?.includes('fullscreen')){
+   // A host may decline the preferred layout while the MCP connection remains usable.
+   await app.requestDisplayMode({mode:'fullscreen'}).catch(()=>{});
+  }
  }).catch(error=>{emit({type:'connection',connected:false,message:'Open ThingsCTL from the installed plugin to connect to Things.'});throw error;});
  return ready;
 }

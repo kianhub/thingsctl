@@ -1,7 +1,7 @@
 {
   "name": "thingsctl",
-  "version": "0.1.0+3d1c5c8bc8b6",
-  "description": "Things 3 in Codex, with a focused local workspace and verified task commands.",
+  "version": "0.1.1+e7388e2593a9",
+  "description": "Things 3 in ChatGPT and Codex, with a local task workspace and verified commands.",
   "author": {
     "name": "Kian"
   },
@@ -11,8 +11,8 @@
   "mcpServers": "./mcp.json",
   "interface": {
     "displayName": "ThingsCTL",
-    "shortDescription": "Your Things, inside Codex",
-    "longDescription": "Browse and edit Things 3 through documented local automation. A Things-inspired task workspace, Quick Entry, scheduling, projects, areas, tags, and selected-task conversation attachments. Runs on your Mac through the ThingsCTL Bridge.",
+    "shortDescription": "Your Things, inside ChatGPT",
+    "longDescription": "A Things-inspired app in the ChatGPT sidebar and conversation panel. Browse and edit Things 3 with list navigation, Quick Entry, separate When and Deadline controls, projects, areas, tags, and selected-task context. Runs on your Mac through the ThingsCTL Bridge.",
     "developerName": "Kian",
     "category": "Productivity",
     "capabilities": [

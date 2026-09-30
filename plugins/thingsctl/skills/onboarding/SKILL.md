@@ -1,6 +1,6 @@
 ---
 name: onboarding
-description: Set up the local ThingsCTL Bridge and verify a Things 3 workspace connection in Codex. Use after installing ThingsCTL or when its connection needs repair.
+description: Set up the local ThingsCTL Bridge and verify a Things 3 workspace connection in ChatGPT or Codex. Use after installing ThingsCTL or when its connection needs repair.
 ---
 
 # Set up ThingsCTL
