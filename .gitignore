@@ -16,3 +16,9 @@ work/
 *.thingsdatabase/
 *.p12
 *.key
+
+# Ship the verified workspace so installing the tool does not require Node.
+!ui/dist/
+ui/dist/*
+!ui/dist/things-workspace.html
+!ui/THIRD-PARTY-NOTICES.txt

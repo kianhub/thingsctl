@@ -1,0 +1,172 @@
+<div id="things-workspace" aria-label="Things inspired sample workspace">
+  <div class="tw-window">
+    <aside class="tw-sidebar" aria-label="Task lists">
+      <div class="tw-chrome"><div class="tw-lights" aria-hidden="true"><span></span><span></span><span></span></div><span class="tw-app-name">thingsctl</span></div>
+      <nav class="tw-lists">
+        <button type="button" class="tw-nav cursor-interaction" data-view="inbox"><i data-lucide="inbox" class="tw-blue" aria-hidden="true"></i><span>Inbox</span><span class="tw-count">2</span></button>
+        <button type="button" class="tw-nav cursor-interaction" data-view="today"><i data-lucide="star" class="tw-yellow" aria-hidden="true"></i><span>Today</span><span class="tw-count" data-today-count>5</span></button>
+        <button type="button" class="tw-nav cursor-interaction" data-view="upcoming"><i data-lucide="calendar-days" class="tw-red" aria-hidden="true"></i><span>Upcoming</span></button>
+        <button type="button" class="tw-nav cursor-interaction" data-view="anytime"><i data-lucide="layers" class="tw-teal" aria-hidden="true"></i><span>Anytime</span></button>
+        <button type="button" class="tw-nav cursor-interaction" data-view="someday"><i data-lucide="archive" class="tw-sand" aria-hidden="true"></i><span>Someday</span></button>
+        <div class="tw-nav-gap"></div>
+        <button type="button" class="tw-nav cursor-interaction" data-view="logbook"><i data-lucide="book-open" class="tw-green" aria-hidden="true"></i><span>Logbook</span></button>
+        <button type="button" class="tw-nav cursor-interaction" data-view="trash"><i data-lucide="trash-2" class="tw-gray" aria-hidden="true"></i><span>Trash</span></button>
+      </nav>
+      <div class="tw-areas">
+        <div class="tw-area-label"><i data-lucide="briefcase-business" aria-hidden="true"></i><span>Work</span></div>
+        <button type="button" class="tw-nav tw-project-nav cursor-interaction" data-view="website"><i data-lucide="circle" class="tw-blue" aria-hidden="true"></i><span>Website refresh</span></button>
+        <button type="button" class="tw-nav tw-project-nav cursor-interaction" data-view="launch"><i data-lucide="circle" class="tw-blue" aria-hidden="true"></i><span>Autumn launch</span></button>
+        <div class="tw-area-label tw-personal"><i data-lucide="house" aria-hidden="true"></i><span>Personal</span></div>
+        <button type="button" class="tw-nav tw-project-nav cursor-interaction" data-view="weekend"><i data-lucide="circle" class="tw-blue" aria-hidden="true"></i><span>Weekend away</span></button>
+      </div>
+      <div class="tw-sidebar-foot">Sample workspace</div>
+    </aside>
+    <main class="tw-main">
+      <div class="tw-toolbar"><span class="tw-demo">Demo data</span><span class="tw-toolbar-name">thingsctl</span></div>
+      <div class="tw-content" data-content></div>
+      <div class="tw-footer"><span>Disconnected demo</span><span data-completion aria-live="polite"></span></div>
+    </main>
+  </div>
+</div>
+<style>
+  #things-workspace{--tw-paper:light-dark(#ffffff,#242426);--tw-sidebar:light-dark(#f1f2f4,#1c1d20);--tw-ink:light-dark(#25272a,#eeedf0);--tw-secondary:light-dark(#777b82,#a4a5ad);--tw-line:light-dark(#eceef1,#393b41);--tw-selected:light-dark(#e1e3e8,#373942);--tw-hover:light-dark(#f4f5f7,#2e3035);--tw-blue:light-dark(#3485da,#70b1f4);--tw-yellow:light-dark(#e8ba37,#e6c660);--tw-red:light-dark(#d9696b,#e08d8c);--tw-teal:light-dark(#36a79d,#6fcfc3);--tw-green:light-dark(#6fac62,#8dbf80);--tw-sand:light-dark(#b9976b,#cab18c);--tw-check:light-dark(#abb0b7,#898e98);--tw-shadow:light-dark(#d1d5dd50,#00000045);--tw-red-light:light-dark(#fa5d59,#b76864);--tw-yellow-light:light-dark(#f6bf4e,#b9a05f);--tw-green-light:light-dark(#40c85c,#67946b);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;color:var(--tw-ink);background:transparent}
+  #things-workspace *{box-sizing:border-box}
+  #things-workspace button{font:inherit;color:inherit}
+  #things-workspace .tw-window{display:grid;grid-template-columns:216px minmax(0,1fr);overflow:hidden;min-height:614px;border:1px solid var(--tw-line);border-radius:11px;background:var(--tw-paper);box-shadow:0 9px 30px var(--tw-shadow)}
+  #things-workspace .tw-sidebar{background:var(--tw-sidebar);display:flex;flex-direction:column;padding:0 10px 15px}
+  #things-workspace .tw-chrome{height:66px;display:flex;align-items:center;gap:16px;padding:0 10px}
+  #things-workspace .tw-lights{display:flex;gap:7px}
+  #things-workspace .tw-lights span{width:11px;height:11px;border-radius:50%;background:var(--tw-red-light)}
+  #things-workspace .tw-lights span:nth-child(2){background:var(--tw-yellow-light)}
+  #things-workspace .tw-lights span:nth-child(3){background:var(--tw-green-light)}
+  #things-workspace .tw-app-name{font-size:12px;color:var(--tw-secondary)}
+  #things-workspace .tw-nav{display:flex;align-items:center;gap:10px;background:transparent;border:0;border-radius:6px;width:100%;padding:7px 10px;min-height:34px;text-align:left}
+  #things-workspace .tw-nav svg{width:18px;height:18px;flex:none;stroke-width:2}
+  #things-workspace .tw-nav span:nth-child(2){flex:1;min-width:0}
+  #things-workspace .tw-nav:hover{background:var(--tw-hover)}
+  #things-workspace .tw-nav[aria-current="page"]{background:var(--tw-selected)}
+  #things-workspace .tw-count{font-size:12px;color:var(--tw-secondary);font-variant-numeric:tabular-nums}
+  #things-workspace .tw-nav-gap{height:15px}
+  #things-workspace .tw-blue{color:var(--tw-blue)}
+  #things-workspace .tw-yellow{color:var(--tw-yellow)}
+  #things-workspace .tw-red{color:var(--tw-red)}
+  #things-workspace .tw-teal{color:var(--tw-teal)}
+  #things-workspace .tw-sand{color:var(--tw-sand)}
+  #things-workspace .tw-green{color:var(--tw-green)}
+  #things-workspace .tw-gray{color:var(--tw-secondary)}
+  #things-workspace .tw-areas{margin-top:29px}
+  #things-workspace .tw-area-label{display:flex;align-items:center;gap:9px;padding:5px 10px;color:var(--tw-secondary);font-size:12px;font-weight:500}
+  #things-workspace .tw-area-label svg{width:16px;height:16px}
+  #things-workspace .tw-personal{margin-top:17px}
+  #things-workspace .tw-project-nav{padding-left:21px}
+  #things-workspace .tw-project-nav svg{width:16px;height:16px}
+  #things-workspace .tw-sidebar-foot{margin-top:auto;padding:28px 10px 0;font-size:11px;color:var(--tw-secondary)}
+  #things-workspace .tw-main{display:flex;flex-direction:column;min-width:0;background:var(--tw-paper)}
+  #things-workspace .tw-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:0 29px;font-size:11px;color:var(--tw-secondary)}
+  #things-workspace .tw-demo{padding:4px 0}
+  #things-workspace .tw-toolbar-name{display:none}
+  #things-workspace .tw-content{width:100%;max-width:730px;padding:11px 44px 35px;margin:0 auto;min-height:497px}
+  #things-workspace .tw-title{display:flex;align-items:center;gap:14px;margin:0 0 30px;font-size:30px;font-weight:500;letter-spacing:-.8px}
+  #things-workspace .tw-title svg{width:29px;height:29px;stroke-width:1.8}
+  #things-workspace .tw-project-description{margin:-13px 0 30px;color:var(--tw-secondary);line-height:1.6;max-width:480px}
+  #things-workspace .tw-group{margin:0 0 29px}
+  #things-workspace .tw-group-title{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--tw-line);padding:0 0 9px;margin:0 0 4px;font-size:14px;font-weight:500;color:var(--tw-blue)}
+  #things-workspace .tw-group-title svg{width:15px;height:15px}
+  #things-workspace .tw-group-title.tw-evening{border:0;color:var(--tw-ink);margin-top:35px}
+  #things-workspace .tw-evening svg{color:var(--tw-secondary)}
+  #things-workspace .tw-task{border-radius:7px;margin:1px -9px;padding:0 9px}
+  #things-workspace .tw-task.is-open{background:var(--tw-hover);padding-bottom:14px;margin-top:5px;margin-bottom:7px}
+  #things-workspace .tw-task-row{display:flex;align-items:flex-start;gap:11px;min-height:43px}
+  #things-workspace .tw-check-label{padding-top:14px;display:flex;flex:none}
+  #things-workspace .tw-check{appearance:none;-webkit-appearance:none;width:16px;height:16px;margin:0;border:1.4px solid var(--tw-check);border-radius:4px;background:var(--tw-paper)}
+  #things-workspace .tw-check:checked{background:var(--tw-blue);border-color:var(--tw-blue)}
+  #things-workspace .tw-check:checked:after{content:"";display:block;width:8px;height:4px;border-left:1.7px solid var(--tw-paper);border-bottom:1.7px solid var(--tw-paper);transform:rotate(-45deg);margin:4px 0 0 3px}
+  #things-workspace .tw-task-title{background:transparent;border:0;flex:1;min-width:0;padding:12px 0;text-align:left;line-height:1.5;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  #things-workspace .tw-task-title .tw-label{min-width:0;overflow-wrap:anywhere}
+  #things-workspace .tw-task.is-done .tw-label{text-decoration:line-through;color:var(--tw-secondary)}
+  #things-workspace .tw-tag{font-size:11px;color:var(--tw-secondary);background:var(--tw-sidebar);border-radius:4px;padding:1px 6px;white-space:nowrap}
+  #things-workspace .tw-note-mark{display:inline-flex;color:var(--tw-secondary)}
+  #things-workspace .tw-note-mark svg{width:13px;height:13px}
+  #things-workspace .tw-task-detail{padding:0 7px 0 27px;font-size:13px;color:var(--tw-secondary);line-height:1.6}
+  #things-workspace .tw-task-detail p{margin:0 0 12px}
+  #things-workspace .tw-checklist{display:grid;gap:8px}
+  #things-workspace .tw-checklist label{display:flex;align-items:center;gap:9px;color:var(--tw-ink)}
+  #things-workspace .tw-checklist input{width:13px;height:13px;flex:none}
+  #things-workspace .tw-when{display:flex;align-items:center;gap:6px;margin-top:14px;font-size:12px;color:var(--tw-blue)}
+  #things-workspace .tw-when svg{width:14px;height:14px}
+  #things-workspace .tw-empty{color:var(--tw-secondary);padding:24px 0}
+  #things-workspace .tw-footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:auto;padding:15px 29px;color:var(--tw-secondary);font-size:11px;border-top:1px solid var(--tw-line)}
+  #things-workspace[data-density="compact"] .tw-task-row{min-height:35px}
+  #things-workspace[data-density="compact"] .tw-task-title{padding:8px 0}
+  #things-workspace[data-density="compact"] .tw-check-label{padding-top:10px}
+  @media(max-width:700px){#things-workspace .tw-window{grid-template-columns:182px minmax(0,1fr)}#things-workspace .tw-content{padding:11px 25px 30px}#things-workspace .tw-nav{gap:8px;padding-left:8px;padding-right:8px}#things-workspace .tw-project-nav{padding-left:15px}#things-workspace .tw-app-name{display:none}}
+  @media(max-width:520px){#things-workspace .tw-window{display:flex;flex-direction:column;min-height:0}#things-workspace .tw-sidebar{padding:0 9px 12px}#things-workspace .tw-chrome{height:41px;justify-content:space-between}#things-workspace .tw-app-name{display:block}#things-workspace .tw-lists{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}#things-workspace .tw-nav{gap:6px;justify-content:flex-start;min-height:37px;padding:7px 5px;font-size:12px}#things-workspace .tw-nav svg{width:15px;height:15px}#things-workspace .tw-count{display:none}#things-workspace .tw-nav-gap{display:none}#things-workspace .tw-areas{margin-top:12px;display:flex;gap:4px;flex-wrap:wrap}#things-workspace .tw-area-label,#things-workspace .tw-personal{display:none}#things-workspace .tw-project-nav{width:auto;flex:1 1 auto;padding:7px}#things-workspace .tw-project-nav svg{width:13px;height:13px}#things-workspace .tw-sidebar-foot{display:none}#things-workspace .tw-content{padding:7px 22px 26px;min-height:435px}#things-workspace .tw-toolbar{min-height:37px;padding:0 22px}#things-workspace .tw-title{font-size:27px;margin-bottom:24px}#things-workspace .tw-title svg{width:26px;height:26px}#things-workspace .tw-footer{padding:13px 22px}#things-workspace .tw-group{margin-bottom:22px}}
+  @media(max-width:380px){#things-workspace .tw-lists{grid-template-columns:repeat(3,minmax(0,1fr))}#things-workspace .tw-content{padding-left:18px;padding-right:18px}#things-workspace .tw-areas{gap:0}#things-workspace .tw-project-nav{font-size:11px}}
+  @media(pointer:coarse){#things-workspace .tw-nav{min-height:44px}#things-workspace .tw-task-row{min-height:48px}#things-workspace .tw-check-label{padding:15px 5px 17px 0}#things-workspace .tw-task-title{min-height:48px}#things-workspace .tw-checklist label{min-height:39px}}
+</style>
+<script>
+(()=>{
+  const root=document.getElementById('things-workspace');
+  const content=root.querySelector('[data-content]');
+  const tasks={
+    capture:{title:'Sketch ideas for the home office',notes:'A few thoughts to sort later. Keep the desk by the window.',list:'inbox'},
+    cafe:{title:'Try the new neighborhood café',tag:'Personal',notes:'Saturday morning, if the weather is good.',list:'inbox'},
+    outline:{title:'Outline the new home page',tag:'Focus',notes:'Keep the message clear: what it does, who it helps, and why it matters.',checklist:['Write a simple headline','Choose three key features','Collect a few references'],list:'website',today:true},
+    assets:{title:'Gather photos and brand assets',tag:'Design',notes:'Use the latest photography folder. Check the crop on smaller screens.',list:'website',today:true},
+    review:{title:'Review the launch checklist',notes:'Check owners and dates before sharing the final version.',list:'launch',today:true},
+    groceries:{title:'Pick up groceries',tag:'Errands',notes:'Coffee, oat milk, tomatoes, and fresh bread.',list:'personal',today:true},
+    read:{title:'Read a chapter',notes:'Leave a little time to unwind.',list:'personal',today:true,evening:true},
+    copy:{title:'Write the product page copy',tag:'Writing',notes:'Lead with the most useful thing the product does.',list:'website'},
+    mobile:{title:'Check the mobile layout',tag:'Design',notes:'Start with the smallest screen and work upward.',list:'website',upcoming:true},
+    release:{title:'Prepare the announcement',tag:'Writing',notes:'A short introduction and a clear link.',list:'launch',upcoming:true},
+    hotel:{title:'Book a place to stay',notes:'A quiet spot near the old town.',list:'weekend'},
+    route:{title:'Plan a walking route',tag:'Personal',notes:'Save a few places for lunch along the way.',list:'weekend'},
+    garden:{title:'Make a small balcony garden',tag:'Personal',notes:'Start with herbs and one flowering plant.',list:'someday'}
+  };
+  const views={today:{title:'Today',icon:'star',color:'tw-yellow'},inbox:{title:'Inbox',icon:'inbox',color:'tw-blue'},upcoming:{title:'Upcoming',icon:'calendar-days',color:'tw-red'},anytime:{title:'Anytime',icon:'layers',color:'tw-teal'},someday:{title:'Someday',icon:'archive',color:'tw-sand'},logbook:{title:'Logbook',icon:'book-open',color:'tw-green'},trash:{title:'Trash',icon:'trash-2',color:'tw-gray'},website:{title:'Website refresh',icon:'circle',color:'tw-blue',description:'A clearer story, a lighter layout, and a fresh set of images.'},launch:{title:'Autumn launch',icon:'circle',color:'tw-blue',description:'Bring the details together for a thoughtful launch.'},weekend:{title:'Weekend away',icon:'circle',color:'tw-blue',description:'A little time to explore somewhere new.'}};
+  const defaults={view:'today',expanded:'outline',completed:[],checks:[],density:'roomy'};
+  let state={...defaults},snapshot={},tweakSettings=null;
+  const own=(value)=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+  function hydrate(saved){
+    snapshot=own(saved);const model=own(own(snapshot.modelContent).thingsWorkspace);const ui=own(own(snapshot.privateContent).thingsWorkspace);
+    state={...defaults,view:views[model.view]?model.view:defaults.view,expanded:tasks[ui.expanded]?ui.expanded:null,completed:Array.isArray(model.completed)?model.completed.filter(id=>tasks[id]):[],checks:Array.isArray(ui.checks)?ui.checks.filter(value=>typeof value==='string'):[],density:ui.density==='compact'?'compact':'roomy'};
+    if(!Object.keys(model).length&&!Object.keys(ui).length)state={...defaults};
+    if(tweakSettings)tweakSettings.density=state.density;
+  }
+  function persist(){
+    const next={modelContent:{...own(snapshot.modelContent),thingsWorkspace:{view:state.view,selectedTask:state.expanded,completed:state.completed}},privateContent:{...own(snapshot.privateContent),thingsWorkspace:{expanded:state.expanded,checks:state.checks,density:state.density}}};
+    snapshot=next;
+    if(window.openai&&typeof window.openai.setWidgetState==='function')window.openai.setWidgetState(next).catch(()=>{});
+  }
+  const escape=(value)=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function taskHtml(id){const task=tasks[id],done=state.completed.includes(id),expanded=state.expanded===id;
+    const details=expanded?`<div class="tw-task-detail"><p>${escape(task.notes)}</p>${task.checklist?`<div class="tw-checklist">${task.checklist.map((text,i)=>`<label class="cursor-interaction"><input class="tw-check cursor-interaction" type="checkbox" data-check="${id}:${i}" ${state.checks.includes(id+':'+i)?'checked':''}>${escape(text)}</label>`).join('')}</div>`:''}${task.today?`<div class="tw-when"><i data-lucide="${task.evening?'moon':'star'}" aria-hidden="true"></i>${task.evening?'This Evening':'Today'}</div>`:''}</div>`:'';
+    return `<article class="tw-task${expanded?' is-open':''}${done?' is-done':''}"><div class="tw-task-row"><label class="tw-check-label cursor-interaction"><input type="checkbox" class="tw-check cursor-interaction" data-complete="${id}" aria-label="Complete ${escape(task.title)} in demo" ${done?'checked':''}></label><button class="tw-task-title cursor-interaction" type="button" data-expand="${id}" aria-expanded="${expanded}"><span class="tw-label">${escape(task.title)}</span>${task.tag?`<span class="tw-tag">${escape(task.tag)}</span>`:''}${task.checklist&&!expanded?'<span class="tw-note-mark"><i data-lucide="list" aria-hidden="true"></i></span>':''}</button></div>${details}</article>`;
+  }
+  function group(title,ids,evening=false){return `<section class="tw-group">${title?`<h2 class="tw-group-title${evening?' tw-evening':''}">${evening?'<i data-lucide="moon" aria-hidden="true"></i>':''}${escape(title)}</h2>`:''}${ids.map(taskHtml).join('')}</section>`;}
+  function render(){const active=document.activeElement;const focusKey=active?.dataset?.expand?['expand',active.dataset.expand]:active?.dataset?.complete?['complete',active.dataset.complete]:null;const view=views[state.view];let groups='';const ids=Object.keys(tasks);
+    if(state.view==='today')groups=group('Website refresh',['outline','assets'])+group('Autumn launch',['review'])+group('',['groceries'])+group('This Evening',['read'],true);
+    else if(state.view==='inbox')groups=group('',ids.filter(id=>tasks[id].list==='inbox'));
+    else if(state.view==='upcoming')groups=group('Tomorrow',['mobile'])+group('Friday',['release']);
+    else if(state.view==='anytime')groups=group('Website refresh',['copy','mobile'])+group('Autumn launch',['release'])+group('Weekend away',['hotel','route']);
+    else if(state.view==='someday')groups=group('',['garden']);
+    else if(state.view==='logbook')groups=state.completed.length?group('',state.completed):'<div class="tw-empty">Completed sample tasks will appear here.</div>';
+    else if(state.view==='trash')groups='<div class="tw-empty">No sample tasks in the Trash.</div>';
+    else if(state.view==='website')groups=group('Shape the story',['outline','copy'])+group('Bring it to life',['assets','mobile']);
+    else if(state.view==='launch')groups=group('Get ready',['review','release']);
+    else groups=group('A little planning',['hotel','route']);
+    content.innerHTML=`<h1 class="tw-title"><i data-lucide="${view.icon}" class="${view.color}" aria-hidden="true"></i>${escape(view.title)}</h1>${view.description?`<p class="tw-project-description">${escape(view.description)}</p>`:''}${groups}`;
+    root.dataset.density=state.density;
+    root.querySelectorAll('[data-view]').forEach(button=>{if(button.dataset.view===state.view)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+    root.querySelector('[data-today-count]').textContent=String(ids.filter(id=>tasks[id].today&&!state.completed.includes(id)).length);
+    root.querySelector('[data-completion]').textContent=state.completed.length?`${state.completed.length} completed in demo`:'';
+    if(globalThis.lucide)lucide.createIcons({attrs:{width:16,height:16}});
+    if(focusKey)root.querySelector(`[data-${focusKey[0]}="${focusKey[1]}"]`)?.focus();
+  }
+  root.addEventListener('click',event=>{const nav=event.target.closest('[data-view]'),expand=event.target.closest('[data-expand]');if(nav){state.view=nav.dataset.view;state.expanded=null;render();persist();}else if(expand){state.expanded=state.expanded===expand.dataset.expand?null:expand.dataset.expand;render();persist();}});
+  root.addEventListener('change',event=>{const input=event.target;if(input.dataset.complete){const id=input.dataset.complete;state.completed=input.checked?[...new Set([...state.completed,id])]:state.completed.filter(value=>value!==id);render();persist();}else if(input.dataset.check){const key=input.dataset.check;state.checks=input.checked?[...new Set([...state.checks,key])]:state.checks.filter(value=>value!==key);persist();}});
+  hydrate(window.openai?.widgetState);render();
+  window.addEventListener('openai:set_globals',event=>{const globals=event.detail?.globals;if(globals&&Object.prototype.hasOwnProperty.call(globals,'widgetState')){hydrate(globals.widgetState);render();}});
+  if(globalThis.Tweak){tweakSettings={density:state.density};const tweak=new Tweak({container:root,onChange:()=>{state.density=tweakSettings.density;render();persist();}});tweak.addSelect(tweakSettings,'density',{label:'Task spacing',options:[{label:'Roomy',value:'roomy'},{label:'Compact',value:'compact'}]});}
+})();
+</script>

@@ -1,0 +1,37 @@
+{
+  "name": "thingsctl",
+  "version": "0.1.0+3d1c5c8bc8b6",
+  "description": "Things 3 in Codex, with a focused local workspace and verified task commands.",
+  "author": {
+    "name": "Kian"
+  },
+  "homepage": "https://github.com/kianhub/thingsctl",
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./mcp.json",
+  "interface": {
+    "displayName": "ThingsCTL",
+    "shortDescription": "Your Things, inside Codex",
+    "longDescription": "Browse and edit Things 3 through documented local automation. A Things-inspired task workspace, Quick Entry, scheduling, projects, areas, tags, and selected-task conversation attachments. Runs on your Mac through the ThingsCTL Bridge.",
+    "developerName": "Kian",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "composerIcon": "./assets/navigation.svg",
+    "logo": "./assets/icon.svg",
+    "logoDark": "./assets/icon.svg",
+    "brandColor": "#3478F6",
+    "defaultPrompt": [
+      "Open my Things workspace.",
+      "Help me plan today using Things."
+    ]
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/onboarding/SKILL.md"
+    }
+  }
+}

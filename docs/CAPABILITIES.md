@@ -1,29 +1,46 @@
 # Integration capabilities
 
-Reviewed September 30, 2026. The installed Things app is version 3.24. Only app metadata and its scripting dictionary were inspected; no personal task content was accessed.
+Updated September 30, 2026. The bridge connects to Things 3.24 with granted Automation permission. The same disposable project/task completed the native fixture flow after fixes; both were moved to Trash. The retained Python suite has 51 tests. The table distinguishes verified native behavior from implemented but unverified paths.
 
-The sources describe what Things exposes. Routes and release priorities below are proposed; integration behavior still needs a disposable-data proof of concept.
+## v0.1 implementation
 
-| Capability | Proposed route | Constraint |
+| Capability | Implemented path | Validation and limit |
 | --- | --- | --- |
-| Read tasks, projects, areas, tags, built-in lists | AppleScript | Preserve stable IDs and native collection order. Resolve localized list names during onboarding. |
-| Create and edit basic tasks and containers | AppleScript | Core task properties, membership, tags, notes, and status. Container removal has different consequences for areas and projects. |
-| Complete, cancel, reopen, move | AppleScript | Verify resulting status and membership. Repeating items need separate validation. |
-| Deadline | AppleScript | `due date` represents Deadline. Schedule start dates separately. |
-| Start date and basic scheduling | AppleScript `schedule`, URL Scheme | AppleScript activation date is read-only; use documented scheduling operations. |
-| Evening and timed reminder | URL Scheme, optional Shortcuts | Distinct from deadline and start date. Verify through an adapter that exposes the fields. |
-| Read headings and checklists | Optional Shortcuts helper | Not exposed by the public AppleScript object model. Helper export serialization is an implementation gate. |
-| Create a project with headings and tasks | URL JSON | Structured creation; validate IDs and result via supported read-back. |
-| Edit headings and checklists | Shortcuts or supported URL operations | Support differs by operation. URLs can replace/append checklist content; do not overwrite unread data. |
-| Reveal an item or search in Things | AppleScript, URL Scheme | URL `show` and `search` navigate the native app; they do not return task data. |
-| Recurrence rule authoring | Deferred | No general recurrence-rule creation endpoint is documented in the reviewed APIs. |
-| Full manual reordering | Validation gate | Preserve read order; do not promise arbitrary drag reorder until a supported write path is proven. |
-| Rich attachment gallery | Outside first release | Do not promise Reminders-style image attachment parity. |
+| Read tasks, projects, areas, tags, and built-in lists | AppleScript → Swift bridge → shared command service | Native built-in IDs resolve, with public-name fallback. Task ID reads are verified; full personal-library browsing is not used for tests. Public collection membership may omit nested tasks. Task commands reject project IDs; bounded source cursors skip project containers without stalling on empty pages. |
+| Search tasks | Bounded supported snapshots | Title, notes, tags, status, and parent filters; pagination and incomplete-result reporting are fixture tested. This is not a complete export when limits are reached. |
+| Create/edit tasks | AppleScript | Title, notes, dates, and project membership verified; direct tag edits remain unverified. |
+| Complete, cancel, reopen | AppleScript status | Implemented with read-back verification; completion, cancellation, and reopening verified on the fixture; repeating-item consequences remain unverified. |
+| Move to a project or area; detach a parent | AppleScript membership | Stable parent IDs; clearing membership is explicit. Project attachment/detachment verified; area moves remain unverified. |
+| Trash tasks | AppleScript delete | Task and fixture-project Trash readback verified. No bulk container deletion or Trash restore is advertised. |
+| Deadline | AppleScript `due date` | Separate date-only field; set/clear and read-back code are implemented. Native set/clear round trip verified (`delete due date` clears it). |
+| Start date / Anytime / Someday | AppleScript scheduling and list placement | `when` and `whenKind` remain separate from Deadline. Date/Today verified within a project, Anytime/Someday verified on the detached fixture. Project-child missing start kinds are unknown; project Anytime/Someday writes are rejected before dispatch because native readback cannot confirm them. |
+| Create projects, areas, and tags | AppleScript | Project creation/readback verified on the fixture. Area/tag creation is implemented and fixture tested. General container editing/deletion is outside v0.1. |
+| Reveal a task in Things | AppleScript | Opens the native item; a reveal does not change task content. Native verification pending. |
+| Things-inspired workspace | Bundled React MCP App | Browser fixtures verify controls, errors/conflicts, and light/dark layouts. The full synthetic browser suite was repeated after final native semantics fixes. Installed tools are discovered; native host rendering is blocked and remains unverified. |
+| Selected task conversation context | OpenAI Extensions model-context bridge | Implemented with explicit user selection and host capability checks. Actual Codex attachment behavior remains unverified. |
 
-AppleScript details: [Things AppleScript Commands](https://culturedcode.com/things/support/articles/4562654/). The local public dictionary also confirms no checklist or heading class. Hidden experimental properties are excluded.
+The task service records available fields and adapter capabilities. Unsupported fields are rejected rather than silently cleared. An interrupted or unreadable write is uncertain, and the journal prevents automatic redispatch under the same operation ID. Revision checks detect changes observed before saving; they do not provide atomic cross-app transactions.
 
-URL updates require the user's Things auth token. Checklist operations allow up to 100 items. Repeating items restrict changes to when, deadline, completed, and canceled through URLs. A URL dispatch alone does not prove a saved change. [Things URL Scheme](https://culturedcode.com/things/support/articles/2803573/)
+## Unavailable fields and operations
 
-Shortcuts exposes richer item metadata, including heading, start date, evening, reminder date, and checklist. Find Items returns at most 500 results; test query partitioning and report incomplete results. These actions require Things 3.17 or newer and macOS 14 or newer. [Things Shortcuts Actions](https://culturedcode.com/things/support/articles/9596775/)
+| Capability | v0.1 status | Future documented route or gate |
+| --- | --- | --- |
+| Read/edit headings and checklists | Unavailable | Public AppleScript has no heading/checklist classes. A Shortcuts helper and its export/read-back behavior would need implementation and verification. |
+| Project creation with headings or checklists | Unavailable | Supported URL JSON may be useful after safe verification is available. No URL mutation adapter ships in v0.1. |
+| Evening placement and timed reminders | Unavailable | Documented URL/Shortcuts interfaces expose richer scheduling, but v0.1 neither reads nor edits it. |
+| Recurrence-rule authoring | Unavailable | No general creation endpoint is documented in the reviewed integrations. Repeating-item changes require separate validation. |
+| Inherited tags and other richer metadata | Unavailable as distinct fields | A documented Shortcuts export may distinguish applied and inherited values. Current tags represent the AppleScript adapter's direct tag strings. |
+| Arbitrary manual reordering | Unavailable | Preserve native read order; prove a supported write route before adding drag reorder. |
+| Rich attachment gallery | Outside v0.1 | Selected task context is implemented; Reminders-style image attachment parity is not promised. |
+| Shortcuts helper | Not implemented | JSON serialization, the 500-result query limit, partitioning, latency, and update semantics are unverified. |
+| URL auth-token setup | Not implemented or required | A future URL update adapter would require a Things auth token stored in Keychain. |
 
-The live integration will use only documented automation. Cultured Code identifies AppleScript, Shortcuts, the URL scheme, and Mail to Things as safe routes, and warns against direct database writes and sharing Things Cloud credentials. [Third Party AI Tools and Things](https://culturedcode.com/things/support/articles/5510170/)
+## Public integration references
+
+[Things AppleScript commands](https://culturedcode.com/things/support/articles/4562654/) document the core interface. The installed public dictionary confirms the basic task/container properties and the absence of heading or checklist classes. Hidden experimental properties are excluded.
+
+[Things URL Scheme](https://culturedcode.com/things/support/articles/2803573/) documents richer creation and updates. URL updates require a Things auth token; checklist operations have a 100-item limit. Repeating items impose restrictions on changes to scheduling and status through that interface. Launching a URL alone is not evidence that a change was saved. These routes are future possibilities rather than v0.1 features.
+
+[Things Shortcuts actions](https://culturedcode.com/things/support/articles/9596775/) expose richer item metadata such as heading, start date, Evening, reminder date, and checklist. Find Items returns at most 500 results. The actions require Things 3.17+ and macOS 14+. No helper or proven complete export path is included in this release.
+
+[Third-party AI tools and Things](https://culturedcode.com/things/support/articles/5510170/) identifies AppleScript, Shortcuts, the URL scheme, and Mail to Things as supported integration routes, and cautions against direct database writes or sharing Things Cloud credentials. ThingsCTL uses documented automation and excludes live database access.

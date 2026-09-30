@@ -1,0 +1,12 @@
+{
+  "name": "thingsctl-local",
+  "interface": {"displayName": "ThingsCTL Local"},
+  "plugins": [
+    {
+      "name": "thingsctl",
+      "source": {"source": "local", "path": "./plugins/thingsctl"},
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "category": "Productivity"
+    }
+  ]
+}

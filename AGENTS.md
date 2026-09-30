@@ -1,6 +1,6 @@
 # Project guidance
 
-This is a planning repository for a Things 3 equivalent of RemCTL. Read `docs/PLAN.md`, `docs/CAPABILITIES.md`, and `docs/DESIGN.md` before implementation.
+This repository implements a v0.1 Things 3 equivalent of RemCTL with a shared command core, CLI, local MCP plugin, native automation bridge, and Things-inspired workspace. Read `docs/PLAN.md`, `docs/CAPABILITIES.md`, and `docs/DESIGN.md` before making changes.
 
 Keep CLI, MCP, and workspace behavior behind one shared command layer. Things 3 is the source of truth.
 
@@ -15,4 +15,4 @@ Keep CLI, MCP, and workspace behavior behind one shared command layer. Things 3 
 - Label every simulated interface as demo data until it is connected.
 - Do not copy upstream RemCTL source without reviewing its license and retaining required attribution.
 
-This initial repository contains a plan and UI concept, not a working integration.
+The retained 51-test suite, native build, and authorized disposable fixture flow pass. The plugin is installed with a granted Things connection, and its MCP tools are available in the host. Native workspace rendering and conversation attachments remain unverified because Computer Use blocks the ChatGPT app; consult `docs/PLAN.md` for current evidence. Keep the original demo clearly separate from the connected workspace.

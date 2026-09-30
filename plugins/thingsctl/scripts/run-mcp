@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+PLUGIN_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export THINGSCTL_PLUGIN_ROOT="$PLUGIN_DIR"
+if [ ! -f "$PLUGIN_DIR/runtime/thingsctl_pkg/mcp_server.py" ]; then
+  printf '%s\n' 'ThingsCTL runtime is missing. Re-run the repository installer or package_plugin.py.' >&2
+  exit 1
+fi
+if [ -n "${THINGSCTL_PYTHON:-}" ]; then
+  PYTHON="$THINGSCTL_PYTHON"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON=$(command -v python3)
+elif [ -x /usr/bin/python3 ]; then
+  PYTHON=/usr/bin/python3
+else
+  printf '%s\n' 'ThingsCTL needs Python 3.9 or later. Install Python, then run the installer again.' >&2
+  exit 1
+fi
+exec "$PYTHON" -I "$PLUGIN_DIR/scripts/runner.py" mcp serve

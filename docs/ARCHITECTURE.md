@@ -1,46 +1,61 @@
 # Architecture
 
-## Proposed stack
+## Implemented stack
 
-Python shared command layer for CLI and MCP, a small Swift macOS host for AppleScript and stable Automation permission identity, and a bundled React and TypeScript workspace. Confirm host signing and Shortcuts execution identity in the first integration spike. This stack follows RemCTL's separation of surfaces without importing its Reminders-specific backend.
+The CLI and local MCP server use a shared Python command service in `thingsctl_pkg/`. A Swift macOS app owns the Automation permission identity and executes the bundled, fixed AppleScript adapter. The React/TypeScript workspace is a self-contained MCP App built with the supported MCP Apps and OpenAI Extensions SDKs.
 
 ```mermaid
 flowchart TD
-  CLI[thingsctl CLI] --> Core[Shared commands and validation]
-  MCP[Local MCP server] --> Core
-  UI[Codex workspace] --> Plugin[Plugin tools]
-  Plugin --> Core
-  Core --> Host[Swift automation host]
-  Host --> AS[AppleScript adapter]
-  Host --> URL[URL Scheme adapter]
-  Host --> SC[Optional Shortcuts helper]
+  CLI[thingsctl CLI] --> Core[Python command service]
+  UI[Codex Things workspace] --> MCP[Local stdio MCP server]
+  MCP --> Core
+  Core --> Socket[Owner-only Unix socket]
+  Socket --> Host[Swift ThingsCTL Bridge]
+  Host --> AS[Fixed AppleScript adapter]
   AS --> Things[Things 3]
-  URL --> Things
-  SC --> Things
+  Core --> Journal[Private operation receipts]
 ```
 
-## Model and adapters
+These components are implemented and tested with fixtures. Swift and AppleScript compile. Native list lookup and an authorized disposable mutation round trip are still validation gates; the diagram describes the code path, not a completed live integration proof.
 
-Model Task, Project, Area, Heading, ChecklistItem, Tag, and BuiltInView explicitly. Keep `when`, `evening`, `reminderAt`, `deadline`, `status`, parent IDs, directly applied tags, and inherited tags separate. Use local calendar dates for date-only fields and timezone-aware values for actual reminder times.
+## Shared model
 
-Each result records adapter capabilities and field availability. Unknown checklist or heading data must not become an empty checklist or an ungrouped task. Native list membership drives built-in views; do not recreate Today solely from a deadline filter. Query and indexing operate on bounded supported snapshots. Cache only derived data, never a second authoritative task store.
+Tasks expose stable IDs, titles, notes, status, `when`, `whenKind`, Deadline, timestamps, parent project/area IDs, directly applied tags, native list membership, available fields, and a revision. Snapshots include projects, areas, tags, lists, pagination, totals, and adapter capabilities. Date-only fields use local calendar dates. `whenKind` distinguishes Anytime, Someday, and scheduled placement; Deadline is independent.
 
-AppleScript provides the core read and mutation path. URL JSON handles supported structured creation. Optional Shortcuts enriches fields AppleScript cannot expose. Bundle a documented helper that the user imports; confirm JSON export, partitioning, latency, and update behavior before making the richer workspace a release promise.
+Headings, checklists, Evening, reminder times, recurrence rules, and arbitrary ordering are unavailable in this adapter. The service rejects unsupported edit fields, and the UI gates controls by field availability. Unknown metadata must not become an empty checklist or a fabricated heading.
 
-## Request and mutation contract
+Native Things lists supply built-in views. The service searches bounded snapshots and reports incomplete results when the scan or result limit is reached. There is no second authoritative task store and no access to the Things database. The operation journal is ThingsCTL's own SQLite receipt file; it is not a copy of Things data.
 
-Use one typed command vocabulary across all surfaces. Return JSON envelopes with request ID, stable item IDs, available fields, data completeness, and operation status. Validation happens before dispatch. Prefer structured arguments to generated script strings; never interpolate user text as executable AppleScript.
+## Commands and mutation receipts
 
-Every mutation carries a durable operation ID and input hash. Save a local journal with minimal sensitive content. Return `verified`, `failed`, or `uncertain`; reusing an operation ID never creates a second task. Verify the change with a supported read route. If read-back is unavailable, state that result explicitly. A process interruption or URL launch is not a success receipt.
+CLI and MCP arguments pass through the same validation and execution layer. User text travels as structured arguments to a fixed AppleScript handler; clients cannot supply executable AppleScript or invoke arbitrary handlers.
 
-Before saving a task, compare an observed revision derived from supported metadata and relevant fields. If Things changed since the editor loaded, return a conflict and reload options. Cross-app writes cannot be advertised as atomic transactions; batch results are per operation, and partial success remains visible.
+Mutations carry an operation ID and an input hash. The journal claims an ID before dispatch, persists its outcome, rejects reuse with different arguments, and returns an existing receipt for an identical completed operation. Pending or uncertain operations are not dispatched again. The browser retains the same ID after a transport failure and never retries a write automatically.
 
-## Local service and installation
+Supported edits use a pre-save revision check when an observed revision is supplied. Revisions derive from exposed editable fields. Read-back compares the supported resulting fields before returning `verified`; errors are `failed` or `uncertain` according to whether dispatch and its outcome can be determined. Interrupted writes and verification failures remain visible. The fixture tests cover these mechanisms; their native behavior still needs integration evidence.
 
-The automation host should have a stable signing identity and owner-only Unix socket. Expose only explicit typed operations. Keep a browser preview on loopback with request authentication and origin checks; no unauthenticated network mutation endpoint. The MCP server starts with read tools, adding explicit mutation tools after the adapter gate passes.
+A revision check cannot make cross-app changes atomic. A native edit can occur between the comparison and write. The inline editor preserves drafts, displays the latest task on conflict, and asks the user to review the chosen version before another save.
 
-A diagnostic command reports Things presence/version, Automation access, optional helper availability, and supported operations. No Full Disk Access requirement is planned. Store an optional URL auth token in Keychain and redact it from every model-facing or diagnostic result. Separate integration installation from plugin registration. Packaging and notarization follow after behavior is validated.
+The owner-only journal stores structured receipts, which can include task content. It is private local state rather than a content-free log. Do not include it in a release, diagnostics export, or repository.
 
-## Reliability references
+## Plugin and workspace
 
-The reliability goals are informed by [RemCTL architecture](https://github.com/viticci/remctl/blob/main/docs/architecture.md) and [workspace mutation handling](https://github.com/viticci/remctl/blob/main/remctl_plugin.py). They are design requirements for this new implementation, not implemented guarantees.
+The Python server exposes read tools, explicit mutations, workspace snapshot/mutation tools, a fullscreen HTML resource, global and thread entrypoints, and structured preference tools. The production UI uses the MCP Apps host bridge; it has no custom browser-to-backend HTTP mutation route or external asset dependency.
+
+The workspace uses the opener's initial tool result. Later list loads, writes, diagnostics, and preferences call the same server. The OpenAI Extensions model-context bridge attaches explicitly selected tasks without automatically sending a message. These host-dependent behaviors remain subject to installed Codex verification; fixture browser tests cover the controls and state transitions.
+
+The build pins `@modelcontextprotocol/ext-apps` 1.7.5 and `@openai/mcp-extensions` 0.1.0 to a supported peer combination. Bundled dependency license texts accompany the HTML. Appearance follows the host unless the user selects an explicit theme.
+
+## Native transport and installation
+
+The host listens on an owner-only Unix socket under `~/Library/Application Support/ThingsCTL/`. It validates the connecting user's identity and accepts only explicit commands. The Python client validates socket type, ownership, and permissions. It can start the fixed installed bridge app when no request has been dispatched; it does not automatically repeat an interrupted mutation.
+
+`./install.sh` builds an ad-hoc-signed `ThingsCTL Bridge.app` with identifier `com.kianhub.thingsctl.bridge`, installs the CLI launcher, stages the plugin runtime and HTML, and registers the plugin through supported Codex commands. Ownership records, backup/recovery behavior, a login LaunchAgent, and uninstall support are implemented. See [installation](INSTALLATION.md).
+
+The bridge requires a macOS Automation grant to control Things. A rebuild may require renewing that grant. No Things Cloud credential, Full Disk Access, Accessibility permission, or URL auth token is required by v0.1. The development build is not notarized.
+
+## Deferred adapters
+
+No URL Scheme mutation adapter or Shortcuts helper is included. A future richer adapter must prove serialization, query completeness, permissions, and supported read-back before exposing its fields. Any future URL auth token belongs in macOS Keychain and must remain absent from model context and diagnostics.
+
+The separation of surfaces was informed by [RemCTL](https://github.com/viticci/remctl). This repository implements an independent Things backend and workspace rather than importing the Reminders-specific source.

@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+"""Checkout-local launcher; installed entry points use pyproject.toml."""
+from thingsctl_pkg.cli import main
+
+raise SystemExit(main())
+
