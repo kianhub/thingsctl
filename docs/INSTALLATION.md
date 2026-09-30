@@ -11,7 +11,7 @@ ThingsCTL is a local macOS tool and ChatGPT/Codex plugin. Things 3 remains your 
 
 Source builds are ad-hoc signed with the stable identifier `com.kianhub.thingsctl.bridge` by default. The published v0.1.2 ZIP is also ad-hoc signed and not notarized. macOS may require renewing the Automation grant after a rebuild.
 
-v0.1.3 introduces the native installer and notarization workflow. Signed downloads are published only after Apple accepts the submissions and the distribution checks pass.
+v0.1.3 introduces the native installer and notarization workflow. The v0.1.4 installer candidate adds direct bridge startup and background-item attribution. Signed downloads are published only after Apple accepts the submissions and the distribution checks pass.
 
 ## Install on your MacBook
 
@@ -39,7 +39,7 @@ cd thingsctl
 
 The source build requires Xcode Command Line Tools (`xcode-select --install`). Allow **ThingsCTL Bridge** to control Things when macOS asks, then follow the connection check below.
 
-The installer builds the native bridge, uses the checked-in bundled workspace, stages a self-contained plugin, installs `~/Applications/ThingsCTL Bridge.app` and `~/.local/bin/thingsctl`, and registers the plugin with supported Codex CLI commands. It preserves an unrelated launcher as a backup and records ownership in `~/Library/Application Support/ThingsCTL/install-manifest.json`. Its LaunchAgent starts the bridge at login. Reinstalls retain a recovery copy of the previous managed files until setup completes. It does not change Things data or macOS permission settings.
+The installer builds the native bridge, uses the checked-in bundled workspace, stages a self-contained plugin, installs `~/Applications/ThingsCTL Bridge.app` and `~/.local/bin/thingsctl`, and registers the plugin with supported Codex CLI commands. It preserves an unrelated launcher as a backup and records ownership in `~/Library/Application Support/ThingsCTL/install-manifest.json`. Its LaunchAgent starts the signed bridge executable directly at login and associates that job with ThingsCTL Bridge. Reinstalls retain a recovery copy of the previous managed files until setup completes. It does not change Things data or macOS permission settings.
 
 If `~/.local/bin` is absent from your shell PATH, use the full executable path or add that directory in your own shell configuration. The installer leaves shell startup files untouched.
 
@@ -60,7 +60,13 @@ Useful installation options:
 ./install.sh --no-launch-agent
 ```
 
-`--skip-build` expects a native build in `dist/`. The bundled HTML in `ui/dist/` is included in the repository; end users do not need Node.js or pnpm. UI development requires Node.js and pnpm (`pnpm -C ui install && pnpm -C ui build`). `--skip-plugin` installs the bridge and CLI only. `--no-launch-agent` skips login startup; the socket client can start the installed bridge on demand.
+`--skip-build` expects a native build in `dist/`. The bundled HTML in `ui/dist/` is included in the repository; end users do not need Node.js or pnpm. UI development requires Node.js and pnpm (`pnpm -C ui install && pnpm -C ui build`). `--skip-plugin` installs the bridge and CLI only. `--no-launch-agent` removes any existing installer-owned login job and skips creating a new one; the socket client can start the installed bridge on demand.
+
+## Background startup and upgrading
+
+v0.1.4 changes the login job from `/usr/bin/open` to `~/Applications/ThingsCTL Bridge.app/Contents/MacOS/ThingsCTLBridge` and adds `AssociatedBundleIdentifiers` for `com.kianhub.thingsctl.bridge`. The job's executable now carries the bridge app's signing identity. The installer briefly launches the bridge's bundled-resource check to register the app with Launch Services before starting the login job; that check does not read Things task data. This follows [Apple's guidance for associating helper executables with app names in System Settings](https://developer.apple.com/documentation/servicemanagement/updating-helper-executables-from-earlier-versions-of-macos).
+
+To upgrade from v0.1.3, run the newer native installer. It stops the previous installer-owned login job before replacing the bridge and writes the updated job while keeping the same app identifier and ownership/recovery checks. If macOS asks about background activity, allow ThingsCTL Bridge. You can review its setting in **System Settings → General → Login Items** (or **Login Items & Extensions**). Installing with `--no-launch-agent` removes the previous owned job instead of leaving it active.
 
 ## Verify connection
 

@@ -17,6 +17,7 @@ from pathlib import Path
 from package_plugin import REPO, stage_plugin
 
 BUNDLE_ID = "com.kianhub.thingsctl.bridge"
+BRIDGE_EXECUTABLE = "Contents/MacOS/ThingsCTLBridge"
 MARKETPLACE = "thingsctl-local"
 SUPPORT = Path.home() / "Library/Application Support/ThingsCTL"
 APP = Path.home() / "Applications/ThingsCTL Bridge.app"
@@ -101,10 +102,13 @@ def write_manifest(value):
     atomic_write(MANIFEST, (json.dumps(value, indent=2) + "\n").encode())
 
 
-def check_installation():
+def check_installation(*, autostart=True):
     """A health check never reverses a successfully published installation."""
     try:
-        result = subprocess.run([str(BIN), "doctor", "--json"], capture_output=True, text=True, timeout=20)
+        environment = os.environ.copy()
+        if not autostart:
+            environment["THINGSCTL_AUTOSTART"] = "0"
+        result = subprocess.run([str(BIN), "doctor", "--json"], capture_output=True, text=True, timeout=20, env=environment)
         diagnostic = json.loads(result.stdout) if result.stdout.strip() else None
         if not isinstance(diagnostic, dict):
             raise ValueError("Invalid diagnostic response")
@@ -165,6 +169,9 @@ def install(args):
     source_app = REPO / "dist/ThingsCTL Bridge.app"
     if not owned_app(source_app):
         raise ValueError("Built bridge is missing or has the wrong bundle identity")
+    executable = source_app / BRIDGE_EXECUTABLE
+    if executable.is_symlink() or not executable.is_file() or not os.access(executable, os.X_OK):
+        raise ValueError("Built bridge executable is missing or not executable")
     if not (REPO / "ui/dist/things-workspace.html").is_file():
         raise ValueError("Bundled workspace is missing. Restore ui/dist/things-workspace.html or run pnpm -C ui build.")
     ensure_safe_dir(SUPPORT)
@@ -197,6 +204,11 @@ def install(args):
         if MARKET_ROOT.exists():
             shutil.rmtree(MARKET_ROOT)
         os.replace(temporary / "marketplace", MARKET_ROOT)
+        # Stop the previous owned job before replacing its executable. This also
+        # migrates v0.1.3's one-shot /usr/bin/open job without touching other jobs.
+        if previous.get("agentHash"):
+            subprocess.run(["launchctl", "bootout", "gui/" + str(os.getuid()) + "/" + BUNDLE_ID],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         quit_bridge()
         if APP.exists():
             shutil.rmtree(APP)
@@ -212,9 +224,16 @@ def install(args):
     state.update({"build": build, "binHash": digest_file(BIN), "appHash": tree_digest(APP), "status": "staged"})
     if not args.no_launch_agent:
         ensure_safe_dir(AGENT.parent)
-        agent = {"Label": BUNDLE_ID, "ProgramArguments": ["/usr/bin/open", "-gj", str(APP)], "RunAtLoad": True}
+        # BTM attribution requires the job's signed executable to share the app's
+        # Team ID. Associating /usr/bin/open would still identify an Apple tool.
+        agent = {"Label": BUNDLE_ID, "ProgramArguments": [str(APP / BRIDGE_EXECUTABLE)],
+                 "AssociatedBundleIdentifiers": [BUNDLE_ID], "RunAtLoad": True}
         atomic_write(AGENT, plistlib.dumps(agent), 0o600)
         state["agentHash"] = digest_file(AGENT)
+    else:
+        if AGENT.exists():
+            AGENT.unlink()
+        state.pop("agentHash", None)
     write_manifest(state)
     if not args.skip_plugin:
         # These are the supported 0.159+ CLI flows, not hand edits to config.toml.
@@ -223,11 +242,14 @@ def install(args):
         state["pluginInstalled"] = True
         write_manifest(state)
     if not args.no_launch_agent:
+        # Launch Services must know the associated app. This transient resource
+        # check exits without reading Things; the login job then runs the bridge.
+        run(["/usr/bin/open", "-gj", "-W", APP, "--args", "--check"], timeout=20)
         domain = "gui/" + str(os.getuid())
-        subprocess.run(["launchctl", "bootout", domain + "/" + BUNDLE_ID], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         run(["launchctl", "bootstrap", domain, AGENT])
-    run(["/usr/bin/open", "-gj", APP])
-    health = check_installation()
+    else:
+        run(["/usr/bin/open", "-gj", APP])
+    health = check_installation(autostart=args.no_launch_agent)
     state["status"] = "installed"
     state["connectionStatus"] = health["status"]
     state.pop("recovery", None)
@@ -263,9 +285,10 @@ def uninstall(args):
             raise ValueError("Codex CLI is required to unregister the installed plugin")
         run(["codex", "plugin", "remove", "thingsctl@" + MARKETPLACE, "--json"])
         run(["codex", "plugin", "marketplace", "remove", MARKETPLACE, "--json"])
-    if AGENT.exists():
+    if state.get("agentHash"):
         subprocess.run(["launchctl", "bootout", "gui/" + str(os.getuid()) + "/" + BUNDLE_ID], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        AGENT.unlink()
+        if AGENT.exists():
+            AGENT.unlink()
     if APP.exists():
         quit_bridge()
         shutil.rmtree(APP)

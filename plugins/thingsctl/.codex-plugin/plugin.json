@@ -1,6 +1,6 @@
 {
   "name": "thingsctl",
-  "version": "0.1.3+c1a49e1dc8ae",
+  "version": "0.1.4+e860447810ef",
   "description": "Things 3 in ChatGPT and Codex, with a local task workspace and verified commands.",
   "author": {
     "name": "Kian"

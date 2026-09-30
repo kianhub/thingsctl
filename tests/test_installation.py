@@ -25,7 +25,8 @@ class InstallationTests(unittest.TestCase):
         source_app = self.repo / "dist/ThingsCTL Bridge.app"
         (source_app / "Contents/MacOS").mkdir(parents=True)
         (source_app / "Contents/Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier": installer.BUNDLE_ID}))
-        (source_app / "Contents/MacOS/ThingsCTL Bridge").write_text("fixture executable")
+        (source_app / installer.BRIDGE_EXECUTABLE).write_text("fixture executable")
+        (source_app / installer.BRIDGE_EXECUTABLE).chmod(0o755)
         (self.repo / "ui/dist").mkdir(parents=True)
         (self.repo / "ui/dist/things-workspace.html").write_text("fixture html")
         (self.repo / ".agents/plugins").mkdir(parents=True)
@@ -74,10 +75,10 @@ class InstallationTests(unittest.TestCase):
         installer.install(self.args)
         state = json.loads(self.manifest.read_text())
         self.assertEqual(state["appHash"], installer.tree_digest(self.app))
-        (self.app / "Contents/MacOS/ThingsCTL Bridge").write_text("changed by user")
+        (self.app / installer.BRIDGE_EXECUTABLE).write_text("changed by user")
         with self.assertRaisesRegex(ValueError, "installer-owned"):
             installer.install(self.args)
-        self.assertEqual((self.app / "Contents/MacOS/ThingsCTL Bridge").read_text(), "changed by user")
+        self.assertEqual((self.app / installer.BRIDGE_EXECUTABLE).read_text(), "changed by user")
 
     def test_failed_reinstall_retains_recovery_copy(self):
         installer.install(self.args)

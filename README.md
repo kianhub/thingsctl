@@ -10,7 +10,7 @@ Things remains your task store. ThingsCTL uses documented local AppleScript auto
 
 ## Install on a Mac
 
-Download the [**v0.1.3 signed installer DMG for Apple silicon**](https://github.com/kianhub/thingsctl/releases/download/v0.1.3/thingsctl-v0.1.3-macos-arm64.dmg), open it, and double-click **Install ThingsCTL**. The bridge, native installer, and DMG are Developer ID signed, accepted by Apple, and have validated stapled notarization tickets. Gatekeeper checks pass, including the installed bridge copy and the installer mounted from the final DMG.
+The **v0.1.4 installer candidate** fixes macOS background-item attribution by starting the signed ThingsCTL Bridge directly. Use **thingsctl-v0.1.4-macos-arm64.dmg** when it becomes available in the [release downloads](https://github.com/kianhub/thingsctl/releases), open it, and double-click **Install ThingsCTL**. Signed downloads are published only after Apple accepts the submissions and the signature, ticket, and Gatekeeper checks pass.
 
 The existing **v0.1.2 macOS arm64 ZIP is a development build and is not notarized**. macOS may block its `Install ThingsCTL.command` launcher. Preparing the signing workflow does not change that published archive.
 
