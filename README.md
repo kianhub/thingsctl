@@ -10,9 +10,11 @@ Things remains your task store. ThingsCTL uses documented local AppleScript auto
 
 ## Install on a Mac
 
-Download the **macOS arm64 ZIP** from the [latest release](https://github.com/kianhub/thingsctl/releases), extract it, and double-click **Install ThingsCTL.command**. The prebuilt archive supports Apple silicon and does not require Swift build tools.
+Use the **signed installer DMG** when one is available in the [release downloads](https://github.com/kianhub/thingsctl/releases): open it and double-click **Install ThingsCTL**. The publisher workflow signs and notarizes the native installer and bridge, then staples and verifies their Apple tickets.
 
-You need macOS 14+, Things 3, Python 3.9+, and a recent Codex CLI. The installer installs the ThingsCTL Bridge, CLI, and local plugin. When macOS asks, allow **ThingsCTL Bridge** to control Things. The development bridge is ad-hoc signed and not notarized.
+The existing **v0.1.2 macOS arm64 ZIP is a development build and is not notarized**. macOS may block its `Install ThingsCTL.command` launcher. Preparing the signing workflow does not change that published archive.
+
+You need macOS 14+, Things 3, Python 3.9+, and a recent Codex CLI. The installer installs the ThingsCTL Bridge, CLI, and local plugin. When macOS asks, allow **ThingsCTL Bridge** to control Things.
 
 For a source install, including Intel Macs with Xcode Command Line Tools:
 
@@ -60,6 +62,8 @@ The retained Python suite has 51 tests, and the existing synthetic UI workflow c
 ## Development and distribution
 
 The source and MIT license are public. The repository marketplace and downloadable release packages distribute the local plugin; no public plugin-directory submission is required. See [plugin distribution](docs/PLUGIN.md).
+
+Maintainers can build the signed DMG with [the notarization workflow](docs/INSTALLATION.md#publisher-signing-and-notarization). Source installs remain ad-hoc signed by default; end users do not need a notarization profile.
 
 Production UI source is in `ui/src/`, and its self-contained build is `ui/dist/things-workspace.html`. End-user installs use the checked-in bundle. Full licenses for bundled dependencies are in `ui/THIRD-PARTY-NOTICES.txt`.
 

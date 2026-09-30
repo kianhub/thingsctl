@@ -9,11 +9,13 @@ ThingsCTL is a local macOS tool and ChatGPT/Codex plugin. Things 3 remains your 
 - Xcode Command Line Tools for a source build of the Swift bridge (`xcode-select --install`). The prebuilt macOS arm64 archive does not require compilation.
 - A recent Codex CLI exposing `codex plugin add` and `codex plugin marketplace add`.
 
-The repository is a development build. It is ad-hoc signed with the stable identifier `com.kianhub.thingsctl.bridge`; it is not notarized. macOS may require renewing the Automation grant after a rebuild.
+Source builds are ad-hoc signed with the stable identifier `com.kianhub.thingsctl.bridge` by default. The published v0.1.2 ZIP is also ad-hoc signed and not notarized. macOS may require renewing the Automation grant after a rebuild.
 
 ## Install on your MacBook
 
 Install Things 3 and a recent ChatGPT/Codex desktop app with plugin support on the MacBook. ThingsCTL uses the Things app on that Mac; signing in to the same Things Cloud account lets Things sync your tasks between Macs.
+
+For a signed release, download the installer DMG from [GitHub releases](https://github.com/kianhub/thingsctl/releases), open it, and double-click **Install ThingsCTL**. The native installer runs the same user-account installation below. You do not need a Developer ID certificate or notary profile to install a signed release. A release is notarized only after Apple accepts it and the stapled tickets and Gatekeeper checks pass; the workflow's presence in source does not notarize earlier downloads.
 
 For an Apple silicon Mac, download the [v0.1.2 macOS arm64 archive](https://github.com/kianhub/thingsctl/releases/download/v0.1.2/thingsctl-v0.1.2-macos-arm64.zip) and extract it. In Terminal, change to the extracted `thingsctl` folder, then run:
 
@@ -21,7 +23,7 @@ For an Apple silicon Mac, download the [v0.1.2 macOS arm64 archive](https://gith
 ./install.sh --skip-build
 ```
 
-This installs the prebuilt bridge and the local plugin. Python 3.9+ and the Codex CLI are still required; Xcode and Node.js are not required for this archive. The archive also includes **Install ThingsCTL.command**, which you can double-click instead of typing the install command.
+This installs the prebuilt bridge and the local plugin. Python 3.9+ and the Codex CLI are still required; Xcode and Node.js are not required for this archive. The archive also includes **Install ThingsCTL.command**, but macOS may block that unsigned launcher. Use a signed installer DMG when available, or build from source below.
 
 To build from the public source repository instead, including on an Intel Mac:
 
@@ -95,6 +97,26 @@ The package contains its Python command runtime and bundled HTML. Its MCP launch
 The public [GitHub repository](https://github.com/kianhub/thingsctl) and its [release downloads](https://github.com/kianhub/thingsctl/releases) distribute the source, plugin package, and prebuilt Mac archive. The installer registers the local marketplace and its sidebar app in the desktop host, using the same local distribution pattern as RemCTL. Public plugin-directory submission is not required.
 
 Installing the plugin alone does not install or host its automation bridge. ThingsCTL Bridge and Things must run on the same Mac as the plugin. Use the installer on each Mac where you want the app available.
+
+## Publisher signing and notarization
+
+This section is for maintainers shipping downloads. End users do not perform these steps.
+
+The release Mac needs a valid **Developer ID Application** certificate with its private key in Keychain, Xcode Command Line Tools, and a stored `notarytool` Keychain profile. A notary profile supplies Apple's submission credentials; it does not supply the signing certificate. Store credentials through `xcrun notarytool store-credentials notarytool` interactively, following [Apple's notarization documentation](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution). Check available signing identities with `security find-identity -v -p codesigning`. Do not place passwords, API keys, certificate exports, or private keys in the repository.
+
+With those prerequisites installed, run:
+
+```sh
+export THINGSCTL_SIGN_IDENTITY='Developer ID Application: Your Name (TEAMID)'
+export THINGSCTL_NOTARY_PROFILE='notarytool'
+./script/notarize_release.sh
+```
+
+Both environment values are references to Keychain items, not secrets. The script verifies that the exact Developer ID identity is available and that the profile authenticates before compiling. It builds for the release Mac's architecture and requires a fresh output filename. It does not publish or upload a GitHub release automatically.
+
+The bridge is signed with hardened runtime, a secure timestamp, and the documented [Apple Events entitlement](https://developer.apple.com/documentation/BundleResources/Entitlements/com.apple.security.automation.apple-events). The native installer uses that entitlement to restart an existing bridge through the shared installer. Neither app enables App Sandbox or debugger entitlements. Local builds without `THINGSCTL_SIGN_IDENTITY` continue to use ad-hoc signing.
+
+The script notarizes and staples the bridge before sealing it inside the installer, then notarizes and staples the installer before creating the DMG. It also copies the stapled bridge with the runtime installer's `shutil.copytree` method and checks that copy's signature, ticket, and Gatekeeper acceptance. It signs, notarizes, and staples the DMG as well. Each stage requires Apple's `Accepted` result and validates its ticket; final checks verify the signatures and Gatekeeper acceptance, including the installer inside a read-only mount of the finished DMG. Reports remain under ignored `dist/notarization-*` directories. Only the verified DMG and its SHA-256 checksum should be added to release downloads. Never describe an artifact as notarized while its submission is pending or rejected.
 
 ## Demo and supported scope
 

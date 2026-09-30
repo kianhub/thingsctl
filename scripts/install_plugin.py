@@ -237,7 +237,11 @@ def install(args):
     print(health["message"])
     if health.get("diagnostic"):
         print(json.dumps(health["diagnostic"], ensure_ascii=False))
-    print("This development build is ad-hoc signed and not notarized; Automation permission may need renewal after rebuilding.")
+    signature = subprocess.run(["/usr/bin/codesign", "--display", "--verbose=2", str(APP)], capture_output=True, text=True)
+    if signature.returncode == 0 and "Authority=Developer ID Application:" in signature.stderr:
+        print("The bridge is signed with a Developer ID Application certificate.")
+    else:
+        print("This development build is ad-hoc signed and not notarized; Automation permission may need renewal after rebuilding.")
 
 
 def uninstall(args):
