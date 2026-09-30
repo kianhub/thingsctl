@@ -14,6 +14,8 @@ Use the **signed installer DMG** when one is available in the [release downloads
 
 The existing **v0.1.2 macOS arm64 ZIP is a development build and is not notarized**. macOS may block its `Install ThingsCTL.command` launcher. Preparing the signing workflow does not change that published archive.
 
+**v0.1.3 introduces the native installer and verified notarization workflow.** Signed downloads are published only after Apple accepts the submissions and the distribution checks pass.
+
 You need macOS 14+, Things 3, Python 3.9+, and a recent Codex CLI. The installer installs the ThingsCTL Bridge, CLI, and local plugin. When macOS asks, allow **ThingsCTL Bridge** to control Things.
 
 For a source install, including Intel Macs with Xcode Command Line Tools:

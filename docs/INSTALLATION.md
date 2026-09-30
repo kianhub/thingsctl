@@ -11,6 +11,8 @@ ThingsCTL is a local macOS tool and ChatGPT/Codex plugin. Things 3 remains your 
 
 Source builds are ad-hoc signed with the stable identifier `com.kianhub.thingsctl.bridge` by default. The published v0.1.2 ZIP is also ad-hoc signed and not notarized. macOS may require renewing the Automation grant after a rebuild.
 
+v0.1.3 introduces the native installer and notarization workflow. Signed downloads are published only after Apple accepts the submissions and the distribution checks pass.
+
 ## Install on your MacBook
 
 Install Things 3 and a recent ChatGPT/Codex desktop app with plugin support on the MacBook. ThingsCTL uses the Things app on that Mac; signing in to the same Things Cloud account lets Things sync your tasks between Macs.
