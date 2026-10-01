@@ -106,6 +106,15 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(result["error"]["details"]["mismatchedFields"], ["listIds"])
 
     def test_create_verifies_schedule_separate_from_deadline_and_unicode(self):
+        original = self.adapter.call
+        def native_receipt(command, args):
+            result = original(command, args)
+            if command == "add":
+                # The bridge returns identity after writing; the core reads
+                # the authoritative task independently for verification.
+                return {"task": {"id": result["task"]["id"]}}
+            return result
+        self.adapter.call = native_receipt
         result = self.service.execute("add", {"title": 'Plan café 🏔 "quoted"', "notes": 'do shell script "no"\nSecond line',
                                                "when": "2026-10-07", "deadline": "2026-10-09", "tags": ["Focus", "Focus"],
                                                "operationId": "create-dates"})
@@ -117,6 +126,44 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(result["operation"]["status"], "verified")
         self.assertEqual([command for command, _ in self.adapter.calls], ["add", "get"])
         self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
+
+    def test_unreadable_optional_fields_do_not_block_text_or_allow_clearing_unknowns(self):
+        original = self.adapter.call
+        def partial_read(command, args):
+            result = original(command, args)
+            if command == "get":
+                for field in ("tags", "deadline", "when", "whenKind"):
+                    result["task"].pop(field, None)
+                    result["task"]["availableFields"].remove(field)
+                result["task"]["fieldErrors"] = {"tags": -1700, "deadline": -1700}
+            return result
+        self.adapter.call = partial_read
+        edited = self.service.execute("update", {"id": self.task_id, "title": "Readable title", "notes": "Readable notes"})
+        self.assert_ok(edited)
+        self.assertEqual(edited["operation"]["status"], "verified")
+        self.adapter.calls.clear()
+        for changes in ({"tags": []}, {"deadline": None}, {"when": "2026-10-12"}):
+            result = self.service.execute("update", dict(changes, id=self.task_id))
+            self.assertEqual(result["error"]["code"], "UNSUPPORTED_FIELD")
+            self.assertEqual(result["operation"]["status"], "failed")
+        self.assertTrue(all(command == "get" for command, _ in self.adapter.calls))
+        today = self.service.execute("update", {"id": self.task_id, "when": "today"})
+        self.assert_ok(today)
+
+        # A project task can expose its empty start date without exposing
+        # its inherited scheduling kind. An explicit date is still editable.
+        self.adapter.tasks[self.task_id].update(projectId="demo-project", when=None)
+        def project_read(command, args):
+            result = original(command, args)
+            if command == "get" and result["task"]["when"] is None:
+                result["task"].pop("whenKind", None)
+                result["task"]["availableFields"].remove("whenKind")
+            return result
+        self.adapter.call = project_read
+        scheduled = self.service.execute("update", {"id": self.task_id, "when": "2026-10-12"})
+        self.assert_ok(scheduled)
+        self.assertEqual(scheduled["operation"]["status"], "verified")
+        self.assertEqual(scheduled["data"]["task"]["whenKind"], "scheduled")
 
     def test_identical_operation_id_replays_without_duplicate_even_after_restart(self):
         args = {"title": "One task", "operationId": "one-create"}
@@ -203,7 +250,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(result["operation"]["status"], "uncertain")
         self.assertEqual(result["error"]["details"]["mismatchedFields"], ["deadline"])
 
-    def test_missing_schedule_kind_does_not_claim_someday_verified(self):
+    def test_missing_schedule_kind_rejects_before_writing(self):
         original = self.adapter.call
         def limited(command, args):
             result = original(command, args)
@@ -213,8 +260,9 @@ class CoreTests(unittest.TestCase):
             return result
         self.adapter.call = limited
         result = self.service.execute("update", {"id": "demo-task-2", "when": "someday"})
-        self.assertEqual(result["error"]["code"], "VERIFICATION_UNAVAILABLE")
-        self.assertEqual(result["operation"]["status"], "uncertain")
+        self.assertEqual(result["error"]["code"], "UNSUPPORTED_FIELD")
+        self.assertEqual(result["operation"]["status"], "failed")
+        self.assertNotIn("update", [command for command, _ in self.adapter.calls])
 
     def test_validation_and_unavailable_fields_never_dispatch(self):
         cases = [("add", {"title": ""}), ("add", {"title": "A", "deadline": "2026-02-30"}),

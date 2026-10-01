@@ -1,6 +1,6 @@
 # Integration capabilities
 
-Updated September 30, 2026. The bridge connects to Things 3.24 with granted Automation permission. The same disposable project/task completed the native fixture flow after fixes; both were moved to Trash. The retained Python suite has 51 tests. The table distinguishes verified native behavior from implemented but unverified paths.
+Updated September 30, 2026. The bridge connects to Things 3.24 with granted Automation permission. The same disposable project/task completed the native fixture flow after fixes; both were moved to Trash. The retained Python suite has 53 tests. The table distinguishes verified native behavior from implemented but unverified paths.
 
 ## v0.1 implementation
 
@@ -8,7 +8,7 @@ Updated September 30, 2026. The bridge connects to Things 3.24 with granted Auto
 | --- | --- | --- |
 | Read tasks, projects, areas, tags, and built-in lists | AppleScript → Swift bridge → shared command service | Native built-in IDs resolve, with public-name fallback. Task ID reads are verified; full personal-library browsing is not used for tests. Public collection membership may omit nested tasks. Task commands reject project IDs; bounded source cursors skip project containers without stalling on empty pages. |
 | Search tasks | Bounded supported snapshots | Title, notes, tags, status, and parent filters; pagination and incomplete-result reporting are fixture tested. This is not a complete export when limits are reached. |
-| Create/edit tasks | AppleScript | Title, notes, dates, and project membership verified; direct tag edits remain unverified. |
+| Create/edit tasks | AppleScript | Title, notes, dates, project membership, and empty tag updates verified; nonempty tag assignment remains unverified. |
 | Complete, cancel, reopen | AppleScript status | Implemented with read-back verification; completion, cancellation, and reopening verified on the fixture; repeating-item consequences remain unverified. |
 | Move to a project or area; detach a parent | AppleScript membership | Stable parent IDs; clearing membership is explicit. Project attachment/detachment verified; area moves remain unverified. |
 | Trash tasks | AppleScript delete | Task and fixture-project Trash readback verified. No bulk container deletion or Trash restore is advertised. |
@@ -16,8 +16,10 @@ Updated September 30, 2026. The bridge connects to Things 3.24 with granted Auto
 | Start date / Anytime / Someday | AppleScript scheduling and list placement | `when` and `whenKind` remain separate from Deadline. Date/Today verified within a project, Anytime/Someday verified on the detached fixture. Project-child missing start kinds are unknown; project Anytime/Someday writes are rejected before dispatch because native readback cannot confirm them. |
 | Create projects, areas, and tags | AppleScript | Project creation/readback verified on the fixture. Area/tag creation is implemented and fixture tested. General container editing/deletion is outside v0.1. |
 | Reveal a task in Things | AppleScript | Opens the native item; a reveal does not change task content. Native verification pending. |
-| Things-inspired workspace | Bundled React MCP App | Browser fixtures verify controls, errors/conflicts, and light/dark layouts. The full synthetic browser suite was repeated after final native semantics fixes. Installed tools are discovered, and the live MCP App side panel rendered and was inspected with Today data. Global sidebar launching and selected-task attachments remain unverified. |
+| Things-inspired workspace | Bundled React MCP App | Browser fixtures verify project navigation, rapid switches, late replies, minimal edit payloads, controls, errors/conflicts, and light/dark layouts. The full synthetic browser suite was repeated after final native semantics fixes. Installed tools are discovered, and the live MCP App side panel rendered and was inspected with Today data. Global sidebar launching and selected-task attachments remain unverified. |
 | Selected task conversation context | OpenAI Extensions model-context bridge | Implemented with explicit user selection and host capability checks. Actual Codex attachment behavior remains unverified. |
+
+Workspace navigation and pagination retain the initial project/area/tag catalog; Refresh explicitly reloads it. Scoped task reads can omit that catalog with `includeCatalog: false`. Verified saves update the visible task directly without another full snapshot. UI requests are serialized, rapid pending navigation reads are coalesced, and replies from previous views cannot replace the current list.
 
 The task service records available fields and adapter capabilities. Unsupported fields are rejected rather than silently cleared. An interrupted or unreadable write is uncertain, and the journal prevents automatic redispatch under the same operation ID. Revision checks detect changes observed before saving; they do not provide atomic cross-app transactions.
 

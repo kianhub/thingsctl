@@ -51,13 +51,13 @@ Changes use operation IDs, optional revision checks, and read-back verification.
 
 ## Current scope
 
-Core task reads, titles, notes, status, dates, deadlines, tags, and parent moves are implemented. When and Deadline are separate. The live disposable integration flow verifies text, scheduling, Deadline set/clear, project moves, status changes, conflicts, and Trash. Direct tag edits and area/tag creation still need live verification.
+Core task reads, titles, notes, status, dates, deadlines, tags, and parent moves are implemented. When and Deadline are separate. The live disposable integration flow verifies text, scheduling, Deadline set/clear, project moves, status changes, conflicts, and Trash. Empty tag updates are verified; nonempty tag assignment and area/tag creation still need live verification.
 
 Project-task Anytime/Someday changes are unavailable because public readback cannot reliably confirm them. Missing start kinds remain unknown; Today and explicit dates are supported. Built-in collections follow Things’ public automation membership and may omit nested tasks.
 
 Headings, checklists, Evening, timed reminders, recurrence authoring, arbitrary reordering, and richer Shortcuts metadata are not connected features. See [capabilities and limits](docs/CAPABILITIES.md).
 
-The retained Python suite has 51 tests, and the existing synthetic UI workflow checks field preservation, conflicts, uncertain writes, and light/dark layouts. The live conversation-panel app was inspected with Things 3.24. Native global-sidebar launching and selected-task context remain unverified. Demo mode is explicit; failed live connections never substitute fictional tasks.
+The retained Python suite has 53 tests, and the synthetic UI workflow checks project navigation, late replies, field preservation, conflicts, uncertain writes, and light/dark layouts. The live conversation-panel app was inspected with Things 3.24. Native global-sidebar launching and selected-task context remain unverified. Demo mode is explicit; failed live connections never substitute fictional tasks.
 
 ## Development and distribution
 

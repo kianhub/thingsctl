@@ -1,5 +1,8 @@
 -- This script is fixed source. User values arrive as typed Apple event arguments.
 -- No request can supply AppleScript source or invoke an arbitrary handler.
+property dispatchMemberIDs : {}
+property dispatchMemberships : {}
+property dispatchProjectIDs : {}
 
 on builtinList(viewName)
     set listID to ""
@@ -42,6 +45,13 @@ on entityRecord(entity)
 end entityRecord
 
 on listContainsTask(identifier, viewName)
+    considering case
+        if identifier is in my dispatchMemberIDs then
+            repeat with membership in my dispatchMemberships
+                if |viewValue| of membership is viewName and identifier is in |coveredIDs| of membership then return identifier is in |idsValue| of membership
+            end repeat
+        end if
+    end considering
     set sourceList to my builtinList(viewName)
     tell application "Things3"
         -- A unique-ID object lookup can resolve globally in Things. Filter the
@@ -49,6 +59,62 @@ on listContainsTask(identifier, viewName)
         return (count (to dos of sourceList whose id is identifier)) > 0
     end tell
 end listContainsTask
+
+on prepareMemberships(identifiers, projectIdentifiers)
+    try
+    set membershipRecords to {}
+    repeat with viewName in {"inbox", "today", "upcoming", "anytime", "someday", "logbook", "trash"}
+        set sourceList to my builtinList(viewName as text)
+        copy identifiers to coveredIDs
+        if (viewName as text) is "trash" then
+            repeat with projectIdentifier in projectIdentifiers
+                if (projectIdentifier as text) is not in coveredIDs then set end of coveredIDs to projectIdentifier as text
+            end repeat
+        end if
+        set memberIDs to {}
+        repeat with anIdentifier in coveredIDs
+            set identifier to anIdentifier as text
+            -- Things accepts documented single-ID comparisons, not an IN-array
+            -- predicate. Reuse the list reference and each result this request.
+            tell application "Things3" to set matchCount to count (to dos of sourceList whose id is identifier)
+            if matchCount > 0 then set end of memberIDs to identifier
+        end repeat
+        set end of membershipRecords to {|viewValue|:viewName as text, |coveredIDs|:coveredIDs, |idsValue|:memberIDs}
+    end repeat
+    copy identifiers to allIdentifiers
+    repeat with projectIdentifier in projectIdentifiers
+        if (projectIdentifier as text) is not in allIdentifiers then set end of allIdentifiers to projectIdentifier as text
+    end repeat
+    set my dispatchMemberIDs to allIdentifiers
+    set my dispatchMemberships to membershipRecords
+    on error errorMessage number errorNumber
+        error "ThingsCTL phase:membership_batch" number errorNumber
+    end try
+end prepareMemberships
+
+on containerRecord(itemCollection, containerKind)
+    -- Retain the native descriptor in a list across the handler boundary.
+    -- A bare ID object can fail coercion before its record handler starts.
+    set entity to item 1 of itemCollection
+    if containerKind is "project" then return my projectRecord(entity)
+    return my entityRecord(entity)
+end containerRecord
+
+on projectNavigationRecord(theProject)
+    tell application "Things3"
+        set identifier to id of theProject
+        set parentArea to missing value
+        try
+            set parentArea to id of area of theProject
+        end try
+        set projectStatus to status of theProject
+        set statusText to "open"
+        if projectStatus is completed then set statusText to "completed"
+        if projectStatus is canceled then set statusText to "canceled"
+        if my listContainsTask(identifier, "trash") then set statusText to "trashed"
+        return {|entityID|:identifier, |entityTitle|:name of theProject, |areaId|:parentArea, |projectStatus|:statusText}
+    end tell
+end projectNavigationRecord
 
 on projectRecord(theProject)
     tell application "Things3"
@@ -66,16 +132,24 @@ on projectRecord(theProject)
 end projectRecord
 
 on taskRecord(theTask)
+    set readStage to "task_id"
+    try
     tell application "Things3"
         set identifier to id of theTask
+        set readStage to "task_title"
         set taskTitle to name of theTask
+        set readStage to "task_notes"
         set taskNotes to notes of theTask
+        set readStage to "task_status"
         set statusValue to status of theTask
         set statusText to "open"
         if statusValue is completed then set statusText to "completed"
         if statusValue is canceled then set statusText to "canceled"
+        set readStage to "task_deadline"
         set taskDeadline to due date of theTask
+        set readStage to "task_start"
         set taskStart to activation date of theTask
+        set readStage to "task_dates"
         set createdValue to creation date of theTask
         set modifiedValue to modification date of theTask
         set completedValue to completion date of theTask
@@ -89,10 +163,12 @@ on taskRecord(theTask)
         try
             set parentArea to id of area of theTask
         end try
+        set readStage to "task_tags"
         set taskTags to {}
         repeat with aTag in tags of theTask
             set end of taskTags to my entityRecord(aTag)
         end repeat
+        set readStage to "task_membership"
         set memberships to {}
         set startKind to missing value
         repeat with viewName in {"inbox", "today", "upcoming", "anytime", "someday", "logbook", "trash"}
@@ -106,26 +182,32 @@ on taskRecord(theTask)
         if memberships contains "trash" then set statusText to "trashed"
         return {|taskID|:identifier, |taskTitle|:taskTitle, |taskNotes|:taskNotes, |taskStatus|:statusText, |whenDate|:taskStart, |whenKind|:startKind, |deadlineDate|:taskDeadline, |createdAt|:createdValue, |modifiedAt|:modifiedValue, |completedAt|:completedValue, |canceledAt|:canceledValue, |projectId|:parentProject, |areaId|:parentArea, |taskTags|:taskTags, |listIds|:memberships}
     end tell
+    on error errorMessage number errorNumber
+        error "ThingsCTL phase:" & readStage number errorNumber
+    end try
 end taskRecord
 
 on taskCollection(viewName)
+    set readStage to "collection_all"
+    try
     tell application "Things3"
         if viewName is "all" then
-            set candidateIDs to id of to dos
+            return to dos
         else if viewName starts with "project:" then
-            set candidateIDs to id of to dos of project id (text 9 thru -1 of viewName)
+            set readStage to "collection_project"
+            return to dos of project id (text 9 thru -1 of viewName)
         else if viewName starts with "area:" then
-            set candidateIDs to id of to dos of area id (text 6 thru -1 of viewName)
+            set readStage to "collection_area"
+            return to dos of area id (text 6 thru -1 of viewName)
         else
+            set readStage to "collection_builtin"
             set sourceList to my builtinList(viewName)
-            set candidateIDs to id of to dos of sourceList
+            return to dos of sourceList
         end if
-        set resultItems to {}
-        repeat with identifier in candidateIDs
-            set end of resultItems to to do id (identifier as text)
-        end repeat
-        return resultItems
     end tell
+    on error errorMessage number errorNumber
+        error "ThingsCTL phase:" & readStage number errorNumber
+    end try
 end taskCollection
 
 on isProjectID(identifier)
@@ -149,12 +231,37 @@ on taskPage(itemCollection, sourceOffset, pageLimit)
     if lastIndex > sourceCount then set lastIndex to sourceCount
     set pageTaskRecords to {}
     set consumedCount to 0
+    set pageIDs to {}
+    set pageProjectFlags to {}
+    set membershipIDs to {}
+    copy my dispatchProjectIDs to projectIDs
+    if firstIndex ≤ sourceCount then
+        repeat with itemIndex from firstIndex to lastIndex
+            set pageItem to item itemIndex of itemCollection
+            tell application "Things3"
+                set identifier to id of pageItem
+                set end of pageIDs to identifier
+            end tell
+            set projectFlag to my isProjectID(identifier)
+            set end of pageProjectFlags to projectFlag
+            if not projectFlag then
+                if identifier is not in membershipIDs then set end of membershipIDs to identifier
+                tell application "Things3"
+                    try
+                        set parentID to id of project of pageItem
+                        if parentID is not in projectIDs then set end of projectIDs to parentID
+                    end try
+                end tell
+            end if
+        end repeat
+    end if
+    if (count membershipIDs) > 0 or (count projectIDs) > 0 then my prepareMemberships(membershipIDs, projectIDs)
     if firstIndex ≤ sourceCount then
         repeat with itemIndex from firstIndex to lastIndex
             set pageItem to item itemIndex of itemCollection
             set consumedCount to consumedCount + 1
-            tell application "Things3" to set pageItemID to id of pageItem
-            if not my isProjectID(pageItemID) then set end of pageTaskRecords to my taskRecord(pageItem)
+            set pageItemID to item (itemIndex - firstIndex + 1) of pageIDs
+            if not item (itemIndex - firstIndex + 1) of pageProjectFlags then set end of pageTaskRecords to my taskRecord(pageItem)
         end repeat
     end if
     set nextValue to missing value
@@ -200,6 +307,10 @@ on applyFields(theTask, opts)
 end applyFields
 
 on dispatchCommand(commandName, opts)
+    -- Native references and membership are valid only for this request.
+    set my dispatchMemberIDs to {}
+    set my dispatchMemberships to {}
+    set my dispatchProjectIDs to {}
     with timeout of 90 seconds
         if commandName is "doctor" then
             tell application "Things3"
@@ -214,11 +325,13 @@ on dispatchCommand(commandName, opts)
         if commandName is "snapshot" then
             set viewName to |viewValue| of opts
             set itemCollection to my taskCollection(viewName)
+            if |includeCatalogValue| of opts then tell application "Things3" to set my dispatchProjectIDs to id of projects
             set pageData to my taskPage(itemCollection, |offsetValue| of opts, |limitValue| of opts)
+            if not |includeCatalogValue| of opts then return pageData & {|catalogIncluded|:false}
             tell application "Things3"
                 set projectRecords to {}
                 repeat with aProject in projects
-                    set end of projectRecords to my projectRecord(aProject)
+                    set end of projectRecords to my projectNavigationRecord(aProject)
                 end repeat
                 set areaRecords to {}
                 repeat with anArea in areas
@@ -233,37 +346,47 @@ on dispatchCommand(commandName, opts)
                     set itemList to my builtinList(listName as text)
                     set end of builtins to (my entityRecord(itemList)) & {|kind|:listName as text}
                 end repeat
-                return pageData & {|projectRecords|:projectRecords, |areaRecords|:areaRecords, |tagRecords|:tagRecords, |listRecords|:builtins}
+                return pageData & {|catalogIncluded|:true, |projectRecords|:projectRecords, |areaRecords|:areaRecords, |tagRecords|:tagRecords, |listRecords|:builtins}
             end tell
         end if
         if commandName is "container_get" then
             set identifier to |identifierValue| of opts
             set containerKind to |kindValue| of opts
+            set readStage to "container_lookup"
+            try
             tell application "Things3"
                 if containerKind is "project" then
-                    set entity to project id identifier
-                    return {|projectRecord|:my projectRecord(entity)}
+                    set ownedRows to {project id identifier}
                 else if containerKind is "area" then
-                    return {|areaRecord|:my entityRecord(area id identifier)}
+                    set ownedRows to {area id identifier}
                 else
-                    return {|tagRecord|:my entityRecord(tag id identifier)}
+                    set ownedRows to {tag id identifier}
                 end if
             end tell
+            set readStage to "container_readback"
+            set entityData to my containerRecord(ownedRows, containerKind)
+            if containerKind is "project" then return {|projectRecord|:entityData}
+            if containerKind is "area" then return {|areaRecord|:entityData}
+            return {|tagRecord|:entityData}
+            on error errorMessage number errorNumber
+                error "ThingsCTL phase:" & readStage number errorNumber
+            end try
         end if
         if commandName is "project_add" then
             tell application "Things3"
                 set newProject to make new project with properties {name:|titleValue| of opts, notes:|notesValue| of opts}
                 if |hasArea| of opts and |areaValue| of opts is not "" then set area of newProject to area id (|areaValue| of opts)
-                return {|projectRecord|:my entityRecord(newProject)}
+                set ownedRows to {newProject}
             end tell
+            return {|projectRecord|:my containerRecord(ownedRows, "entity")}
         end if
         if commandName is "area_add" then
-            tell application "Things3" to set newArea to make new area with properties {name:|titleValue| of opts}
-            return {|areaRecord|:my entityRecord(newArea)}
+            tell application "Things3" to set ownedRows to {make new area with properties {name:|titleValue| of opts}}
+            return {|areaRecord|:my containerRecord(ownedRows, "entity")}
         end if
         if commandName is "tag_add" then
-            tell application "Things3" to set newTag to make new tag with properties {name:|titleValue| of opts}
-            return {|tagRecord|:my entityRecord(newTag)}
+            tell application "Things3" to set ownedRows to {make new tag with properties {name:|titleValue| of opts}}
+            return {|tagRecord|:my containerRecord(ownedRows, "entity")}
         end if
         -- Test harness only; never exposed through CLI or MCP. Exact ID and generated
         -- fixture title must both match before moving the fixture project to Trash.
@@ -284,34 +407,59 @@ on dispatchCommand(commandName, opts)
                     set ownedRows to {to do id identifier, to do id (|identifierValue| of opts)}
                     set pageProbe to {my taskPage(ownedRows, 0, 1), my taskPage(ownedRows, 1, 1)}
                 end if
-                return {|projectRecord|:my entityRecord(fixtureProject), |fixtureTaskIDs|:childIDs, |projectByChildren|:projectByChildren, |taskByChildren|:my isProjectID(|identifierValue| of opts), |fixturePageProbe|:pageProbe}
+                return {|projectRecord|:my entityRecord(fixtureProject), |fixtureTaskIDs|:childIDs, |projectByChildren|:projectByChildren, |projectInTrash|:my listContainsTask(identifier, "trash"), |taskByChildren|:my isProjectID(|identifierValue| of opts), |fixturePageProbe|:pageProbe}
             end tell
         end if
         if commandName is "fixture_cleanup" or commandName is "fixture_restore" then
+            set readStage to "fixture_lookup"
+            try
+            tell application "Things3" to set ownedRows to {project id (|identifierValue| of opts)}
+            set fixtureProject to item 1 of ownedRows
             tell application "Things3"
-                set fixtureProject to project id (|identifierValue| of opts)
                 set fixtureTitle to |titleValue| of opts
+                set readStage to "fixture_identity"
                 if fixtureTitle does not start with "[ThingsCTL integration " or name of fixtureProject is not fixtureTitle then error "Fixture identity mismatch" number -1700
                 if commandName is "fixture_restore" then
+                    set readStage to "fixture_move"
                     move fixtureProject to my builtinList("anytime")
-                    return {|projectRecord|:my projectRecord(fixtureProject)}
+                    set readStage to "fixture_readback"
                 else
+                    set readStage to "fixture_delete"
                     delete fixtureProject
+                    set readStage to "fixture_verify"
                     set cleanResult to my listContainsTask(|identifierValue| of opts, "trash")
                     return {|entityID|:|identifierValue| of opts, |cleaned|:cleanResult}
                 end if
             end tell
+            return {|projectRecord|:my containerRecord(ownedRows, "project")}
+            on error errorMessage number errorNumber
+                error "ThingsCTL phase:" & readStage number errorNumber
+            end try
         end if
         if commandName is "add" then
             tell application "Things3" to set theTask to make new to do with properties {name:|titleValue| of opts} at beginning of my builtinList("inbox")
             my applyFields(theTask, opts)
-            return {|taskRecord|:my taskRecord(theTask)}
+            tell application "Things3" to return {|taskRecord|:{|taskID|:id of theTask}}
         end if
-        tell application "Things3"
-            set theTask to to do id (|identifierValue| of opts)
+        if commandName is "get" then
+            -- Pass a native reference as a list item, as the bounded page path
+            -- does. Resolving a bare object as a handler argument can fail before
+            -- the handler starts, even when the same ID exists in Things.
+            tell application "Things3" to set ownedRows to {to do id (|identifierValue| of opts)}
+            set onePage to my taskPage(ownedRows, 0, 1)
+            set ownedRecords to |taskRecords| of onePage
+            if (count ownedRecords) is 0 then error "The requested ID belongs to a container, not a task" number -1701
+            return {|taskRecord|:item 1 of ownedRecords}
+        end if
+        set readStage to "task_lookup"
+        try
+            tell application "Things3" to set ownedRows to {to do id (|identifierValue| of opts)}
+            set theTask to item 1 of ownedRows
+            set readStage to "task_container_check"
             if my isProjectID(|identifierValue| of opts) then error "The requested ID belongs to a container, not a task" number -1701
-        end tell
-        if commandName is "get" then return {|taskRecord|:my taskRecord(theTask)}
+        on error errorMessage number errorNumber
+            error "ThingsCTL phase:" & readStage number errorNumber
+        end try
         tell application "Things3"
             if commandName is "update" or commandName is "move" then my applyFields(theTask, opts)
             if commandName is "complete" then set status of theTask to completed
@@ -323,6 +471,8 @@ on dispatchCommand(commandName, opts)
                 return {|entityID|:|identifierValue| of opts, |revealed|:true}
             end if
         end tell
-        return {|taskRecord|:my taskRecord(theTask)}
+        -- The shared command service performs an independent get for verification.
+        -- A write receipt only needs its stable ID; do not read every field twice.
+        return {|taskRecord|:{|taskID|:|identifierValue| of opts}}
     end timeout
 end dispatchCommand

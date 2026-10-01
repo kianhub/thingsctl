@@ -3,7 +3,7 @@ import {OpenAIExtensions} from '@openai/mcp-extensions/app';
 import {Envelope,Task,ThingsError,envelope,snapshotData} from './types';
 import {demoCall} from './demo';
 export const demo=new URLSearchParams(location.search).get('demo')==='1';
-export const app=new App({name:'ThingsCTL',version:'0.1.1'},{},{autoResize:true});
+export const app=new App({name:'ThingsCTL',version:'0.1.5'},{},{autoResize:true});
 export const extensions=new OpenAIExtensions(app);
 type Event={type:'result';value:Envelope}|{type:'connection';connected:boolean;message?:string}|{type:'context';context:any};
 const listeners=new Set<(event:Event)=>void>();let latest:Event|undefined;let initialSnapshot=false;
@@ -19,16 +19,21 @@ export function connect(){
   contextChanged(app.getHostContext());emit({type:'connection',connected:true});
   const host=app.getHostContext();if(host?.displayMode==='inline'&&host?.availableDisplayModes?.includes('fullscreen')){
    // A host may decline the preferred layout while the MCP connection remains usable.
-   await app.requestDisplayMode({mode:'fullscreen'}).catch(()=>{});
+   void app.requestDisplayMode({mode:'fullscreen'}).catch(()=>{});
   }
  }).catch(error=>{emit({type:'connection',connected:false,message:'Open ThingsCTL from the installed plugin to connect to Things.'});throw error;});
  return ready;
 }
 export function hasInitialSnapshot(){return initialSnapshot;}
+let serverTail:Promise<unknown>=Promise.resolve();
 export async function call(name:string,args:Record<string,any>={}):Promise<Envelope>{
  await connect();
  const testTransport=(globalThis as any).__THINGSCTL_TEST_TRANSPORT__;
- const raw=demo&&typeof testTransport==='function'?await testTransport(name,args):demo?await demoCall(name,args):await app.callServerTool({name,arguments:args});
+ // The native automation bridge handles one request at a time. Keep rapid UI
+ // reads and writes from racing into its busy gate.
+ const send=()=>demo&&typeof testTransport==='function'?testTransport(name,args):demo?demoCall(name,args):app.callServerTool({name,arguments:args},{timeout:125000});
+ const response=serverTail.then(send);serverTail=response.catch(()=>{});
+ const raw=await response;
  const structured=(raw as any).structuredContent;
  const value=!demo&&name.startsWith('thingsctl_settings_')&&structured&&structured.ok===undefined?{ok:true,data:structured}:envelope(raw);
  if(!value.ok)throw new ThingsError(value);
@@ -43,7 +48,10 @@ export async function mutate(command:string,args:Record<string,any>,revision?:st
   const response=await call('thingsctl_workspace_mutate',{command,arguments:args,operationId,...(revision?{expectedRevision:revision}:{})});
   if(response.operation?.status!=='verified'&&command!=='show')throw new ThingsError({ok:false,error:{code:'UNCERTAIN',message:'Things has not confirmed this change. Check the latest task before trying again.'},operation:{id:operationId,status:'uncertain'}});
   try{sessionStorage.removeItem(key);}catch{}return response;
- }catch(error){if(error instanceof ThingsError&&!error.uncertain){try{sessionStorage.removeItem(key);}catch{}}throw error;}
+ }catch(error){
+  const failure=error instanceof ThingsError||command==='show'?error:new ThingsError({ok:false,error:{code:'MUTATION_UNCERTAIN',message:'The connection ended before ThingsCTL could confirm this change. Check Things before trying again.'},operation:{id:operationId,status:'uncertain'}});
+  if(failure instanceof ThingsError&&!failure.uncertain){try{sessionStorage.removeItem(key);}catch{}}throw failure;
+ }
 }
 export function attachmentAvailable(){return demo||!!extensions.modelContext;}
 export async function attach(tasks:Task[]){

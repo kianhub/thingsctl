@@ -73,11 +73,14 @@ class DemoAdapter:
             view = args.get("view", "today")
             tasks = [self._record(task) for task in self.tasks.values() if self._in_view(task, view)]
             offset, limit = args.get("offset", 0), args.get("limit", 100)
-            return {"tasks": tasks[offset:offset + limit], "projects": deepcopy(self.projects), "areas": deepcopy(self.areas),
-                    "tags": deepcopy(self.tags), "lists": [{"id": name, "title": name.title(), "kind": "builtIn"} for name in
-                     ("inbox", "today", "upcoming", "anytime", "someday", "logbook", "trash", "all")],
+            result = {"tasks": tasks[offset:offset + limit],
                     "total": len(tasks), "offset": offset, "limit": limit, "hasMore": offset + limit < len(tasks),
-                    "capabilities": self._capabilities()}
+                    "capabilities": self._capabilities(), "catalogIncluded": args.get("includeCatalog", True)}
+            if result["catalogIncluded"]:
+                result.update({"projects": deepcopy(self.projects), "areas": deepcopy(self.areas),
+                               "tags": deepcopy(self.tags), "lists": [{"id": name, "title": name.title(), "kind": "builtIn"} for name in
+                                ("inbox", "today", "upcoming", "anytime", "someday", "logbook", "trash", "all")]})
+            return result
         if command == "add":
             task = self._new_task(args)
             self.tasks[task["id"]] = task

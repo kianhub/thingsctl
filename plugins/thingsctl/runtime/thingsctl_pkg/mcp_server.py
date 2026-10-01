@@ -17,6 +17,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from . import __version__
+
 MODERN_VERSION = "2026-07-28"
 LEGACY_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
 META_VERSION = "io.modelcontextprotocol/protocolVersion"
@@ -25,7 +27,7 @@ META_SERVER_INFO = "io.modelcontextprotocol/serverInfo"
 UI_EXTENSION = "io.modelcontextprotocol/ui"
 UI_URI = "ui://thingsctl/workspace.html"
 UI_MIME = "text/html;profile=mcp-app"
-VERSION = "0.1.1"
+VERSION = __version__
 MAX_MESSAGE_BYTES = 1024 * 1024
 NAVIGATION = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="3"/><path d="m6 10 2.7 2.7L14 7.3"/></svg>'
 ICON = {"src": "data:image/svg+xml;base64," + base64.b64encode(NAVIGATION.encode()).decode(), "mimeType": "image/svg+xml", "sizes": ["20x20"]}
@@ -70,8 +72,9 @@ QUERY_FIELDS = {
     "view": {"type": "string", "maxLength": 256, "description": "inbox, today, upcoming, anytime, someday, logbook, trash, all, or project:<id>/area:<id>."},
     "offset": {"type": "integer", "minimum": 0, "maximum": 1000000},
     "limit": {"type": "integer", "minimum": 1, "maximum": 500},
+    "includeCatalog": {"type": "boolean", "description": "Include projects, areas, tags, and built-in list metadata. Defaults to true. False omits the catalog and avoids rescanning it; retain a prior catalog in the workspace."},
 }
-SEARCH_FIELDS = {**QUERY_FIELDS, "projectId": ID, "areaId": ID, "tag": STRING,
+SEARCH_FIELDS = {**{key: value for key, value in QUERY_FIELDS.items() if key != "includeCatalog"}, "projectId": ID, "areaId": ID, "tag": STRING,
                  "status": {"type": "string", "enum": ["open", "completed", "canceled", "trashed"]},
                  "maxScan": {"type": "integer", "minimum": 1, "maximum": 50000}}
 CREATE_META = {"operationId": MUTATION_META["operationId"]}

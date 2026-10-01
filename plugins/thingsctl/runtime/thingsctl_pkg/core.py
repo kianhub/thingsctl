@@ -20,7 +20,7 @@ UNAVAILABLE_FIELDS = {"checklist", "checklistItems", "heading", "headingId", "ev
 CONTROL_KEYS = {"operationId", "expectedRevision"}
 TASK_EDIT_KEYS = {"title", "notes", "when", "deadline", "projectId", "areaId", "tags"}
 COMMAND_KEYS = {
-    "doctor": set(), "list": {"view", "offset", "limit"},
+    "doctor": set(), "list": {"view", "offset", "limit", "includeCatalog"},
     "search": {"query", "view", "tag", "projectId", "areaId", "status", "offset", "limit", "maxScan"},
     "get": {"id"}, "show": {"id"} | CONTROL_KEYS, "add": TASK_EDIT_KEYS | {"operationId"},
     "update": TASK_EDIT_KEYS | CONTROL_KEYS | {"id"},
@@ -79,6 +79,28 @@ def _validate_project_start(args, current_project=None):
                           {"fields": ["when"], "reason": "project_start_kind_unavailable"})
 
 
+def _validate_editable_fields(command, args, task):
+    """Never replace a field the native adapter could not read reliably."""
+    available = task.get("availableFields")
+    requested = {key: [key] for key in args if key in TASK_EDIT_KEYS}
+    if "when" in requested:
+        if args["when"] == "today":
+            requested["when"] = ["listIds"]
+        elif args["when"] in {"anytime", "someday"}:
+            requested["when"] = ["when", "whenKind"]
+        else:
+            requested["when"] = ["when"]
+    if command in {"complete", "cancel", "reopen", "trash"}:
+        requested["status"] = ["status"]
+    missing = [field for field, sources in requested.items() if any(
+        key not in task or (available is not None and key not in available) for key in sources)]
+    if "tags" in requested and task.get("tags") is None and "tags" not in missing:
+        missing.append("tags")
+    if missing:
+        raise ThingsError("UNSUPPORTED_FIELD", "Things could not provide the fields needed to verify this change. Edit those fields in Things.",
+                          {"fields": sorted(missing), "reason": "field_read_unavailable"})
+
+
 def _validate(command, arguments):
     if command not in COMMAND_KEYS:
         raise ThingsError("UNKNOWN_COMMAND", "Unknown ThingsCTL command.")
@@ -135,6 +157,8 @@ def _validate(command, arguments):
             raise ThingsError("VALIDATION_ERROR", "view must name a built-in view, project:<id>, or area:<id>.")
         _integer(args.setdefault("offset", 0), "offset", 0, 1000000)
         _integer(args.setdefault("limit", 20), "limit", 1, 500)
+        if "includeCatalog" in args and not isinstance(args["includeCatalog"], bool):
+            raise ThingsError("VALIDATION_ERROR", "includeCatalog must be true or false.")
     if command == "search":
         _text(args.setdefault("query", ""), "query", empty=True, max_length=10000)
         if "tag" in args:
@@ -194,6 +218,7 @@ class ThingsService:
                     raise ThingsError("CONFLICT", "This task changed in Things since you loaded it. Reload the task before saving.",
                                       {"expectedRevision": args["expectedRevision"], "actualRevision": before["revision"], "task": before})
                 _validate_project_start(args, before.get("projectId"))
+                _validate_editable_fields(command, args, before)
             host_args = {key: value for key, value in args.items() if key not in CONTROL_KEYS}
             dispatched = True
             changed = self.adapter.call(command, host_args)
@@ -272,7 +297,7 @@ class ThingsService:
         query = args["query"].casefold()
         while has_more and scanned < args["maxScan"]:
             snapshot = self._snapshot({"view": args["view"], "offset": source_offset,
-                                       "limit": min(20, args["maxScan"] - scanned)})
+                                       "limit": min(20, args["maxScan"] - scanned), "includeCatalog": False})
             tasks = snapshot["tasks"]
             total_source = snapshot.get("sourceTotal", snapshot.get("total"))
             has_more = snapshot["hasMore"]

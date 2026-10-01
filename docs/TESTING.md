@@ -8,7 +8,7 @@ python3 -m unittest discover -s tests -v
 THINGSCTL_TEST_STATIC_ONLY=1 pnpm -C ui test
 ```
 
-The bridge build checks typed Apple event descriptors, Unicode/quoted text, calendar dates, and input boundaries without sending an event to Things. Python tests use synthetic adapters and mocked installation commands. UI static tests check field preservation and the self-contained bundle. Full UI development tests use an isolated headless browser with explicitly labeled demo data:
+The bridge build checks typed Apple event descriptors, Unicode/quoted text, calendar dates, and input boundaries without sending an event to Things. Python tests use synthetic adapters and mocked installation commands. UI static tests check field preservation and the self-contained bundle. The browser flow exercises project changes, rapid navigation, late host replies, minimal save payloads, catalog retention/refresh, and saving while switching views. Full UI development tests use an isolated headless browser with explicitly labeled demo data:
 
 ```sh
 pnpm -C ui check

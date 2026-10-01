@@ -7,7 +7,7 @@ export function draftFromTask(task:Task):TaskDraft{return {title:task.title,note
 export function projectIsOpen(project:Container){return project.status==='open';}
 export function quickDefaults(view:string){return {when:view==='today'?'today':view==='someday'?'someday':view==='upcoming'?'tomorrow':view.startsWith('project:')?'':'anytime',location:view.startsWith('project:')||view.startsWith('area:')?view:''};}
 export function quickEntryArguments(draft:TaskDraft){const args:Record<string,unknown>={title:draft.title.trim(),notes:draft.notes};const project=draft.location.startsWith('project:');if(draft.when&&!(project&&['anytime','someday'].includes(draft.when))&&(draft.when!=='anytime'||draft.location))args.when=draft.when;if(draft.tags.length)args.tags=draft.tags;if(draft.deadline)args.deadline=draft.deadline;if(project)args.projectId=draft.location.slice(8);if(draft.location.startsWith('area:'))args.areaId=draft.location.slice(5);return args;}
-export type Snapshot = {view?:string;tasks:Task[]; projects:Container[]; areas:Container[]; tags:Tag[]; lists:unknown; total:number; offset:number; limit:number; nextOffset:number|null; hasMore:boolean; capabilities:Record<string,unknown>};
+export type Snapshot = {view?:string;tasks:Task[]; projects:Container[]; areas:Container[]; tags:Tag[]; lists:unknown; catalogIncluded?:boolean; total:number|null; offset:number; limit:number; nextOffset:number|null; hasMore:boolean; capabilities:Record<string,unknown>};
 export type Envelope = {ok:boolean; data?:Record<string,any>; error?:{code:string;message:string;details?:Record<string,any>}; operation?:{id:string;status:string}; meta?:{demo?:boolean;adapter?:string;settings?:Record<string,any>}};
 export function fieldAvailable(task:Task, field:string){return Array.isArray(task.availableFields)?task.availableFields.includes(field):task.availableFields?.[field]===true;}
 export function envelope(input:any):Envelope {
@@ -19,7 +19,18 @@ export function envelope(input:any):Envelope {
 export function snapshotData(value:Envelope):Snapshot|null {
   const data=value.data;
   if(!value.ok || !Array.isArray(data?.tasks))return null;
-  return {...data, tasks:data.tasks, projects:data.projects??[],areas:data.areas??[],tags:data.tags??[], total:data.total??data.tasks.length,offset:data.offset??0,limit:data.limit??20,nextOffset:data.nextOffset??(data.hasMore&&data.tasks.length?(data.offset??0)+data.tasks.length:null),hasMore:!!data.hasMore,capabilities:data.capabilities??{}} as Snapshot;
+  return {...data, tasks:data.tasks, projects:data.projects??[],areas:data.areas??[],tags:data.tags??[], total:data.total===null?null:data.total??data.tasks.length,offset:data.offset??0,limit:data.limit??20,nextOffset:data.nextOffset??(data.hasMore&&data.tasks.length?(data.offset??0)+data.tasks.length:null),hasMore:!!data.hasMore,capabilities:data.capabilities??{}} as Snapshot;
+}
+export function taskBelongsToView(task:Task,view:string){
+  if(view.startsWith('project:'))return task.projectId===view.slice(8)&&task.status==='open';
+  if(view.startsWith('area:'))return task.areaId===view.slice(5)&&task.status==='open';
+  if(view==='all')return true;
+  if(view==='trash')return task.status==='trashed';
+  if(view==='logbook')return task.status==='completed'||task.status==='canceled';
+  if(task.status!=='open')return false;
+  if(task.listIds?.includes(view))return true;
+  if(fieldAvailable(task,'listIds'))return false;
+  return null;
 }
 export class ThingsError extends Error {
   constructor(public response:Envelope){super(response.error?.message??'The action could not be completed.');this.name='ThingsError';}

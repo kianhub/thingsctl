@@ -21,7 +21,7 @@ let capabilities: [String: Any] = [
     "adapter": "applescript", "coreTasks": true, "projects": true, "areas": true, "tags": true,
     "scheduling": true, "deadlines": true, "headings": false, "checklists": false,
     "evening": false, "reminders": false, "recurrence": false, "manualReorder": false,
-    "shortcutsHelper": false,
+    "shortcutsHelper": false, "includeCatalog": true,
 ]
 let fields = ["id", "title", "notes", "status", "when", "whenKind", "deadline", "createdAt", "modifiedAt", "completedAt", "canceledAt", "projectId", "areaId", "tags", "listIds"]
 let keyMap = ["taskID": "id", "entityID": "id", "taskTitle": "title", "entityTitle": "title", "taskNotes": "notes", "entityNotes": "notes", "taskStatus": "status", "projectStatus": "status", "whenDate": "when", "deadlineDate": "deadline", "taskTags": "tags", "taskRecords": "tasks", "projectRecords": "projects", "areaRecords": "areas", "tagRecords": "tags", "listRecords": "lists", "totalCount": "total", "offsetValue": "offset", "limitValue": "limit", "taskRecord": "task", "projectRecord": "project", "areaRecord": "area", "tagRecord": "tag"]
@@ -110,7 +110,7 @@ enum BridgeFailure: Error { case invalid(String) }
 func options(_ args: [String: Any], command: String) throws -> [String: Any] {
     let editable: Set<String> = ["title", "notes", "tags", "when", "deadline", "projectId", "areaId"]
     let commandKeys: [String: Set<String>] = [
-        "doctor": [], "snapshot": ["view", "offset", "limit"], "get": ["id"],
+        "doctor": [], "snapshot": ["view", "offset", "limit", "includeCatalog"], "get": ["id"],
         "container_get": ["id", "kind"], "add": editable, "update": editable.union(["id"]),
         "complete": ["id"], "cancel": ["id"], "reopen": ["id"], "trash": ["id"], "show": ["id"],
         "move": ["id", "projectId", "areaId"], "project_add": ["title", "notes", "areaId"],
@@ -118,7 +118,7 @@ func options(_ args: [String: Any], command: String) throws -> [String: Any] {
     ]
     guard let keys = commandKeys[command] else { throw BridgeFailure.invalid("Unknown command") }
     guard Set(args.keys).isSubset(of: keys) else { throw BridgeFailure.invalid("Unsupported argument") }
-    var opts: [String: Any] = ["identifierValue": "", "viewValue": "today", "offsetValue": 0, "limitValue": 20,
+    var opts: [String: Any] = ["identifierValue": "", "viewValue": "today", "offsetValue": 0, "limitValue": 20, "includeCatalogValue": true,
         "hasTitle": false, "titleValue": "", "hasNotes": false, "notesValue": "", "hasTags": false, "tagsValue": "",
         "hasWhen": false, "whenValue": "", "whenDateValue": NSNull(), "hasDeadline": false, "deadlineValue": NSNull(),
         "hasProject": false, "projectValue": "", "hasArea": false, "areaValue": ""]
@@ -166,7 +166,11 @@ func options(_ args: [String: Any], command: String) throws -> [String: Any] {
         guard let value = view as? String, value.count <= 300, !value.contains("\0"), ["all", "inbox", "today", "upcoming", "anytime", "someday", "logbook", "trash"].contains(value) || (value.hasPrefix("project:") && value.count > 8) || (value.hasPrefix("area:") && value.count > 5) else { throw BridgeFailure.invalid("Unknown view") }
         opts["viewValue"] = value
     }
-    for (key, fallback, range) in [("offset", 0, 0...1_000_000), ("limit", 100, 1...500)] {
+    if let catalog = args["includeCatalog"] {
+        guard let value = catalog as? NSNumber, CFGetTypeID(value) == CFBooleanGetTypeID() else { throw BridgeFailure.invalid("includeCatalog must be a boolean") }
+        opts["includeCatalogValue"] = value.boolValue
+    }
+    for (key, fallback, range) in [("offset", 0, 0...1_000_000), ("limit", 20, 1...500)] {
         let number = args[key] ?? fallback
         guard let numeric = number as? NSNumber, CFGetTypeID(numeric) != CFBooleanGetTypeID(), let value = number as? Int, numeric.doubleValue == Double(value), range.contains(value) else { throw BridgeFailure.invalid("Invalid \(key)") }
         opts[key + "Value"] = value
@@ -197,17 +201,25 @@ final class Automation {
         let response = script.executeAppleEvent(event, error: &error)
         if error != nil {
             let number = error?[NSAppleScript.errorNumber] as? Int ?? 0
+            let message = error?[NSAppleScript.errorMessage] as? String ?? ""
+            let stages: Set<String> = ["task_lookup", "task_container_check", "task_id", "task_title", "task_notes", "task_status", "task_deadline", "task_start", "task_dates", "task_tags", "task_membership", "membership_batch", "collection_all", "collection_project", "collection_area", "collection_builtin", "collection_items", "container_lookup", "container_readback", "fixture_lookup", "fixture_identity", "fixture_move", "fixture_readback", "fixture_delete", "fixture_verify"]
+            var details: [String: Any] = ["appleScriptError": number]
+            if let marker = message.range(of: "ThingsCTL phase:") {
+                let stage = String(message[marker.upperBound...].prefix { $0.isLetter || $0 == "_" })
+                if stages.contains(stage) { details["automationStage"] = stage }
+            }
             // Any dispatched write can have partially succeeded. Never auto-retry it.
             if mutations.contains(command) {
                 let message = (number == -1743 || number == -10004)
                     ? "Allow ThingsCTL Bridge to control Things in System Settings → Privacy & Security → Automation. Check the item before retrying this change."
                     : "Things may have applied part of this change. Check the item before retrying."
-                return errorResult("MUTATION_UNCERTAIN", message, ["appleScriptError": number, "operationStatus": "uncertain"])
+                details["operationStatus"] = "uncertain"
+                return errorResult("MUTATION_UNCERTAIN", message, details)
             }
             if number == -1743 || number == -10004 { return errorResult("AUTOMATION_DENIED", "Allow ThingsCTL Bridge to control Things in System Settings → Privacy & Security → Automation.") }
             if number == -1728 { return errorResult("NOT_FOUND", "The requested Things item or list was not found") }
             if number == -1701 { return errorResult("WRONG_ITEM_KIND", "This command requires a task ID; the ID belongs to a container") }
-            return errorResult("AUTOMATION_ERROR", "Things automation failed", ["appleScriptError": number])
+            return errorResult("AUTOMATION_ERROR", "Things automation failed", details)
         }
         guard var data = decode(response) as? [String: Any] else {
             return mutations.contains(command)
@@ -215,7 +227,7 @@ final class Automation {
                 : errorResult("INVALID_RESPONSE", "Things returned an unexpected result")
         }
         if command == "snapshot" || command == "doctor" { data["capabilities"] = capabilities }
-        if command == "doctor" { data["bridgeVersion"] = "0.1.0"; data["socket"] = socketPath }
+        if command == "doctor" { data["bridgeVersion"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"; data["socket"] = socketPath }
         return ["ok": true, "data": data]
     }
 }

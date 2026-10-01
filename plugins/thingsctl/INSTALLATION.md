@@ -11,7 +11,7 @@ ThingsCTL is a local macOS tool and ChatGPT/Codex plugin. Things 3 remains your 
 
 Source builds are ad-hoc signed with the stable identifier `com.kianhub.thingsctl.bridge` by default. The published v0.1.2 ZIP is also ad-hoc signed and not notarized. macOS may require renewing the Automation grant after a rebuild.
 
-v0.1.3 introduces the native installer and notarization workflow. The v0.1.4 installer candidate adds direct bridge startup and background-item attribution. Signed downloads are published only after Apple accepts the submissions and the distribution checks pass.
+v0.1.3 introduces the native installer and notarization workflow. v0.1.4 adds direct bridge startup and background-item attribution. v0.1.5 fixes task lookup and workspace navigation, and removes repeated catalog/post-save reads. Signed downloads are published only after Apple accepts the submissions and the distribution checks pass.
 
 ## Install on your MacBook
 
@@ -66,7 +66,7 @@ Useful installation options:
 
 v0.1.4 changes the login job from `/usr/bin/open` to `~/Applications/ThingsCTL Bridge.app/Contents/MacOS/ThingsCTLBridge` and adds `AssociatedBundleIdentifiers` for `com.kianhub.thingsctl.bridge`. The job's executable now carries the bridge app's signing identity. The installer briefly launches the bridge's bundled-resource check to register the app with Launch Services before starting the login job; that check does not read Things task data. This follows [Apple's guidance for associating helper executables with app names in System Settings](https://developer.apple.com/documentation/servicemanagement/updating-helper-executables-from-earlier-versions-of-macos).
 
-To upgrade from v0.1.3, run the newer native installer. It stops the previous installer-owned login job before replacing the bridge and writes the updated job while keeping the same app identifier and ownership/recovery checks. If macOS asks about background activity, allow ThingsCTL Bridge. You can review its setting in **System Settings → General → Login Items** (or **Login Items & Extensions**). Installing with `--no-launch-agent` removes the previous owned job instead of leaving it active.
+To upgrade from an older release, run the newer native installer. It stops the previous installer-owned login job before replacing the bridge and writes the updated job while keeping the same app identifier and ownership/recovery checks. If macOS asks about background activity, allow ThingsCTL Bridge. You can review its setting in **System Settings → General → Login Items** (or **Login Items & Extensions**). Installing with `--no-launch-agent` removes the previous owned job instead of leaving it active.
 
 ## Verify connection
 
@@ -79,7 +79,7 @@ To upgrade from v0.1.3, run the newer native installer. It stops the previous in
 
 In ChatGPT or Codex, refresh plugin discovery if necessary and invoke **ThingsCTL** → **Open my Things workspace**. The global **ThingsCTL** sidebar entry and **ThingsCTL workspace** conversation-panel tab expose the same interactive app. Mentioning the plugin selects its tools; the workspace opener is what displays the app. Text-only list commands remain available. Preference settings are available through the host's structured settings controls. Selected tasks can be attached to the conversation through the workspace, without sending a message automatically.
 
-If a newly installed plugin's tools are absent in an existing chat, refresh the plugin or open a fresh chat and select ThingsCTL. No installation success message alone proves that tools or the app rendered.
+After upgrading, reopen the ThingsCTL workspace so the host loads the updated UI. If a newly installed plugin's tools are absent in an existing chat, refresh the plugin or open a fresh chat and select ThingsCTL. No installation success message alone proves that tools or the app rendered.
 
 ## MCP and portable package
 

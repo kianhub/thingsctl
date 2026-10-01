@@ -46,6 +46,7 @@ def build_parser():
     listing.add_argument("view", nargs="?", default="today")
     listing.add_argument("--offset", type=int, default=0)
     listing.add_argument("--limit", type=int, default=20)
+    listing.add_argument("--no-catalog", action="store_true", help="Return task rows without rescanning projects, areas, tags, and lists")
     _formatting(listing)
     search = commands.add_parser("search", help="Search a bounded Things snapshot, reporting completeness")
     search.add_argument("query")
@@ -119,6 +120,8 @@ def _arguments(namespace):
         args["deadline"] = None
     if values.get("inbox"):
         args["projectId"] = args["areaId"] = None
+    if values.get("no_catalog"):
+        args["includeCatalog"] = False
     return args, None
 
 

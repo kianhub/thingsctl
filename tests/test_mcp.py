@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from thingsctl_pkg.mcp_server import MCPServer, META_VERSION, META_CAPABILITIES, UI_EXTENSION, UI_URI
+from thingsctl_pkg.core import ThingsService
+from thingsctl_pkg.demo import DemoAdapter
 
 
 class FakeService:
@@ -85,6 +87,37 @@ class MCPTests(unittest.TestCase):
         value = self.request("tools/call", {"name": "thingsctl_doctor", "arguments": {}})["result"]
         self.assertTrue(value["structuredContent"]["ok"])
         self.assertEqual(self.service.calls, [("doctor", {})])
+
+    def test_project_navigation_can_skip_catalog_without_resetting_its_scope(self):
+        class CatalogAdapter(DemoAdapter):
+            def __init__(self):
+                super().__init__()
+                self.catalog_scans = 0
+                self.calls = []
+            def call(self, command, arguments):
+                self.calls.append((command, copy.deepcopy(arguments)))
+                if command == "snapshot" and arguments.get("includeCatalog", True):
+                    self.catalog_scans += 1
+                return super().call(command, arguments)
+        adapter = CatalogAdapter()
+        adapter.projects.append({"id": "different-project", "title": "A different project", "areaId": None})
+        adapter.tasks["demo-task-2"]["projectId"] = "different-project"
+        self.server.service = ThingsService(adapter, self.root / "journal.sqlite3")
+        first = self.request("tools/call", {"name": "thingsctl_workspace_snapshot", "arguments": {"view": "today"}})["result"]["structuredContent"]
+        self.assertTrue(first["ok"])
+        self.assertIn("projects", first["data"])
+        second = self.request("tools/call", {"name": "thingsctl_workspace_snapshot", "arguments": {
+            "view": "project:different-project", "includeCatalog": False}})["result"]["structuredContent"]
+        self.assertTrue(second["ok"])
+        self.assertEqual([task["id"] for task in second["data"]["tasks"]], ["demo-task-2"])
+        self.assertEqual(second["data"]["view"], "project:different-project")
+        self.assertFalse(second["data"]["catalogIncluded"])
+        self.assertNotIn("projects", second["data"])
+        self.assertNotIn("areas", second["data"])
+        search = self.request("tools/call", {"name": "thingsctl_search", "arguments": {"query": "fictional", "maxScan": 40}})["result"]
+        self.assertFalse(search["isError"])
+        self.assertEqual(adapter.catalog_scans, 1)
+        self.assertFalse(adapter.calls[-1][1]["includeCatalog"])
 
     def test_unknown_fields_and_commands_never_reach_service(self):
         for name, args in [
