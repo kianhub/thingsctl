@@ -9,7 +9,7 @@ Run `thingsctl_doctor` first. This diagnostic does not inspect tasks. If the nat
 
 Things 3 must be installed on the same Mac running macOS 14 or newer. When the bridge first connects to Things, macOS may ask whether **ThingsCTL Bridge** may control Things. Help the user enable that Automation permission when required. Do not ask for Things Cloud credentials, database access, Full Disk Access, or Accessibility permission.
 
-The installation is a local development build with a stable bundle identifier. It is ad-hoc signed; its code identity may change after a rebuild, so macOS may require Automation permission again. It is not a notarized release.
+Published signed macOS installer DMGs use Developer ID signing and Apple notarization; consult the release verification details. Source builds are ad-hoc signed by default, and macOS may require Automation permission again after rebuilding. Do not infer the signing or notarization status of an installed build solely from the presence of the release workflow.
 
 After setup passes, use `thingsctl_workspace` to open the user's Things workspace if the user requested it. A failed diagnostic is not a working connection. A successful tool result is not proof that the workspace rendered; confirm the MCP App view in the host when possible. Tool discovery may require refreshing the plugin or opening a fresh chat. Do not create a new chat without the user's request.
 
